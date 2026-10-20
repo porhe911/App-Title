@@ -24,7 +24,7 @@ Title IDs appear below the icons, outside the artwork, with white text by defaul
 
 ## Compatibility
 
-Tested on **PS5 firmware 11.60**, with HomeUI profile **rnps-home 11.1.0+21887 / PS5 11.20 HOMEUI / Hermes v89**. Other firmware/HomeUI profiles have not been verified. Style changes are guarded by exact profile hashes; unsupported profiles are left unchanged. New Media-shortcut registration on firmware 12+ is not implemented.
+Tested on **PS5 firmware 11.60**, with HomeUI profile **rnps-home 11.1.0+21887 / PS5 11.20 HOMEUI / Hermes v89**, and **PS5 13.60**, with **rnps-home 13.0.0+22834 / Hermes v89**. See [13.60 configuration](FW13.60.md). Other firmware/HomeUI profiles have not been verified. Style changes are guarded by exact profile hashes; unsupported profiles are left unchanged. New Media-shortcut registration on firmware 12+ is not implemented.
 
 Requires a working jailbreak and a compatible privileged ELF loader. The payload does not provide a jailbreak.
 

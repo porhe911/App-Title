@@ -15,6 +15,7 @@ int sceRegMgrGetInt(long,int*);
 int ioctl(int,unsigned long,...);
 MonoDomain* mono_get_root_domain();
 MonoThread* mono_thread_attach(MonoDomain*);
+void mono_thread_detach(MonoThread*);
 MonoAssembly* mono_domain_assembly_open(MonoDomain*,const char*);
 MonoImage* mono_assembly_get_image(MonoAssembly*);
 MonoClass* mono_class_from_name(MonoImage*,const char*,const char*);
@@ -132,7 +133,12 @@ bool signature(MonoMethod* method,bool takes_string) {
 bool prepare_request(app_title::Request& r) {
     root_domain=mono_get_root_domain();
     if(!root_domain){stage.store(100);return false;}
-    if(!mono_thread_attach(root_domain)){stage.store(101);return false;}
+    // Only metadata/JIT preparation needs this native thread attached to Mono.
+    struct Attachment {
+        MonoThread* thread;
+        ~Attachment(){if(thread)mono_thread_detach(thread);}
+    } attachment{mono_thread_attach(root_domain)};
+    if(!attachment.thread){stage.store(101);return false;}
     auto* react=image("/system_ex/common_ex/lib/ReactNative.Vsh.Common.dll");
     if(!react){stage.store(102);return false;}
     auto* manager=mono_class_from_name(react,"ReactNative.Vsh.Common","ReactApplicationSceneManager");
@@ -190,7 +196,7 @@ extern "C" __attribute__((noreturn,visibility("default"))) void* elf_main(void*)
     app_title::Request request{};const bool ready=prepare_request(request);
     if(ready&&!app_title::atomic_file(app_title::kRequest,&request,sizeof(request)))stage.store(107);
     publisher.update(snapshot());
-    // The injected thread remains resident even if bootstrap was refused.
+    // The native worker remains resident; its temporary Mono attachment is gone.
     for(;;) {
         int pid=0,on=0,top=0;unsigned color=0xffffff,hooks=0;char extra=0;bool valid=false;
         if(ready)if(FILE* f=fopen(app_title::kActive,"r")) {

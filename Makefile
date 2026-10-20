@@ -13,7 +13,7 @@ OBJ := $(addprefix build/obj/,$(CSRC:.c=.o) $(CPPSRC:.cpp=.o))
 
 .PHONY: all clean verify-elf host-test media-test hooks-test shellui-test runtime-test style-test export-test home-style-test
 all: dist/App_Title_v0.2.8.elf verify-elf
-build/App_Title_ShellUI.elf: src/shellui.cpp src/paths.cpp src/home_style.cpp src/home_style.hpp include/app_title.hpp Makefile
+build/App_Title_ShellUI.elf: src/shellui.cpp src/paths.cpp src/home_style.cpp src/home_style_1360.inc src/home_style.hpp include/app_title.hpp Makefile
 	@mkdir -p build
 	$(CXX) $(CXXFLAGS) -fvisibility=hidden -shared -Wl,-Bsymbolic -Wl,-e,elf_main -Wl,-z,now -Wl,--hash-style=sysv -Wl,--gc-sections -Wl,-soname,libAppTitle.so src/shellui.cpp src/paths.cpp src/home_style.cpp $(SHELLUI_LDLIBS) -o $@
 build/shellui_blob.cpp: build/App_Title_ShellUI.elf tools/embed.py
