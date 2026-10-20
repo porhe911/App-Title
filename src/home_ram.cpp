@@ -79,21 +79,37 @@ bool style(char* out,std::size_t size,const Config& config) {
     std::memset(out+n,' ',size-static_cast<std::size_t>(n)-1);out[size-1]=0;return true;
 }
 }
-HomeStyleResult patch_home_ram(std::uint8_t* ram,std::size_t size,const Config& config) {
+HomeStyleResult patch_home_ram(std::uint8_t* ram,std::size_t size,const Config& config,StyleInput* observed) {
     if(!ram||size<12||size>32*1024*1024||config.color>0xffffff||read32(ram)!=0xfb0bd1e5u)
         return HomeStyleResult::ignored;
-    if(size!=plain_size||read32(ram+4)!=858||read32(ram+8)!=1795)
+    if(observed){observed->format=2;observed->payload_size=static_cast<std::uint32_t>(size);observed->modules=read32(ram+4);observed->startup_size=read32(ram+8);}
+    // RNPS transport/alignment bytes do not belong to the RAM source digest.
+    // Accept the same exact complete source in a larger decrypted allocation;
+    // never read less than its full size, or write any byte in the extra tail.
+    constexpr std::size_t aligned_size=(plain_size+0x3fff)&~std::size_t(0x3fff);
+    if(size<plain_size||size>aligned_size) {
+        if(observed)observed->failure=1;
         return is_home(ram,size)?HomeStyleResult::unsupported:HomeStyleResult::ignored;
-    if(!digest_is(ram,size,"1f57578fcf36d2c85281c142d76e39fc69c01fa8"))
+    }
+    if(read32(ram+4)!=858||read32(ram+8)!=1795) {
+        if(observed)observed->failure=2;
+        return is_home(ram,size)?HomeStyleResult::unsupported:HomeStyleResult::ignored;
+    }
+    if(!digest_is(ram,plain_size,"1f57578fcf36d2c85281c142d76e39fc69c01fa8")) {
+        if(observed)observed->failure=3;
         return is_home(ram,size)?HomeStyleResult::invalid:HomeStyleResult::ignored;
+    }
     for(const auto& m:modules) {
         const auto* entry=ram+12+8*m.id;
         if(read32(entry)!=m.offset-table_base||read32(entry+4)!=m.size||
            ram[m.offset+m.size-1]!=0||std::memchr(ram+m.offset,0,m.size-1)||
-           !digest_is(ram+m.offset,m.size,m.hash))return HomeStyleResult::invalid;
+           !digest_is(ram+m.offset,m.size,m.hash)) {
+            if(observed)observed->failure=4;
+            return HomeStyleResult::invalid;
+        }
     }
     char row[1205],title[1016],labels[567],space[5276],geometry[1507],tile[1948];
-    if(!style(labels,sizeof(labels),config))return HomeStyleResult::invalid;
+    if(!style(labels,sizeof(labels),config)){if(observed)observed->failure=5;return HomeStyleResult::invalid;}
     if(config.outside) {
         Source a(row,ram+modules[0].offset,sizeof(row));
         Source b(title,ram+modules[1].offset,sizeof(title));
@@ -116,7 +132,7 @@ HomeStyleResult patch_home_ram(std::uint8_t* ram,std::size_t size,const Config& 
                "l().default.createElement(i().Animated.View,{style:[u,d.default.image]})),"
                "k&&l().default.createElement(i().Text,{style:d.default.titleId},S))")||
            !e.replace("C=[d.default.imageWrapper,d.default.image]","C=[d.default.imageWrapper]"))
-            return HomeStyleResult::invalid;
+            {if(observed)observed->failure=5;return HomeStyleResult::invalid;}
         a.finish();b.finish();c.finish();d.finish();e.finish();
     }
     const char* staged[]={row,title,labels,space,geometry,tile};

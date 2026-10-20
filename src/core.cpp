@@ -116,7 +116,7 @@ bool load_runtime_status(int pid,RuntimeStatus& status,const char* path) {
     close(fd);
     if(used!=sizeof(RuntimeStatus))return false;
     RuntimeStatus next{};std::memcpy(&next,bytes,sizeof(next));
-    if(next.magic!=kStatusMagic||next.pid!=pid||pid<=0||next.enabled>1||next.style_state>5||next.style_color>0xffffff||next.style_top>3)return false;
+    if(next.magic!=kStatusMagic||next.pid!=pid||pid<=0||next.enabled>1||next.style_state>5||next.style_color>0xffffff||next.style_top>3||next.style_input.format>2||next.style_input.failure>5||next.style_input.buffer_size>32*1024*1024||next.style_input.payload_size>32*1024*1024)return false;
     status=next;return true;
 }
 bool save_config(const Config& c,const char* path) {

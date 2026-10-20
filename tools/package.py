@@ -19,12 +19,12 @@ report=reports[-1].name
 for doc in ['CHANGELOG.md',report,'LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
     files[doc]=(ROOT/doc).read_bytes()
 files['README_RU.md']=(f'# App Title {version}\n\n'
-    f'Тестовая версия с освобождением соединений системных служб и отключением фонового потока от Mono; профили 4.03 и 11.60 сохранены. На консоль нужен только {name}.\n\n'
+    f'Тестовая версия с исправлением обработки raw/padded RAM для 4.03; полная проверка исходного пакета и профиль 11.60 сохранены. На консоль нужен только {name}.\n\n'
     'Замени прежний ELF в autoload и полностью перезагрузи PS5. Выполни jailbreak, загрузи ELF один раз и подожди 20–30 секунд.\n\n'
     'Открой «Мультимедиа → App Title». Для первой проверки выбери «Белые ID под иконкой» и нажми «Сохранить» или OPTIONS.\n\n'
     'Исходники, лицензии и инструкция сборки: [source/README_RU.md](source/README_RU.md).\n'
-    'Проверки жизненного цикла ресурсов и предоставленных HomeUI пройдены. Устранение длительного сбоя игр и FTP пока не подтверждено; тест 4.03 на консоли ожидается.\n').encode()
-for doc in ['Makefile','BUILDING.md','README.md','README_RU.md','CHANGELOG.md','.gitignore',report,'VALIDATION_v0.2.9_20261020.md','VALIDATION_v0.2.8_20261019.md','DEPENDENCIES.json','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
+    'Проверки исходного и raw/padded HomeUI пройдены. Успех на консоли 4.03 пока не подтверждён. Короткий AppTitle.log содержит параметры фактического буфера; постоянного журнала и автоматических дампов нет.\n').encode()
+for doc in ['Makefile','BUILDING.md','README.md','README_RU.md','CHANGELOG.md','.gitignore',report,'VALIDATION_v0.2.10_20261020.md','VALIDATION_v0.2.9_20261020.md','VALIDATION_v0.2.8_20261019.md','DEPENDENCIES.json','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
     files['source/'+doc]=(ROOT/doc).read_bytes()
 for directory in ['src','include','assets','tools','tests','vendor','docs']:
     for path in sorted((ROOT/directory).rglob('*')):

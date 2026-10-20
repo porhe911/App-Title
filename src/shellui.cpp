@@ -44,6 +44,16 @@ std::atomic<std::uint32_t> style_config{0xffffff},applied_config{0xffffff};
 std::atomic<app_title::StyleState> style_state{app_title::StyleState::idle};
 std::atomic_bool style_hook_ready{false};
 std::atomic<unsigned long long> style_patches{0};
+std::atomic<std::uint32_t> style_input_words[6]{};
+void remember_input(const app_title::StyleInput& input) {
+    std::uint32_t words[6];static_assert(sizeof(words)==sizeof(input));
+    std::memcpy(words,&input,sizeof(words));
+    for(unsigned i=0;i<6;++i)style_input_words[i].store(words[i],std::memory_order_relaxed);
+}
+app_title::StyleInput observed_input() {
+    std::uint32_t words[6];for(unsigned i=0;i<6;++i)words[i]=style_input_words[i].load(std::memory_order_relaxed);
+    app_title::StyleInput input{};std::memcpy(&input,words,sizeof(words));return input;
+}
 MonoDomain* root_domain=nullptr;MonoMethod* reload_method=nullptr;
 #define TRAMP(name) extern "C" __attribute__((naked,noinline,used,aligned(16))) void name(){__asm__ volatile(".rept 256\n nop\n .endr\n ret\n");}
 TRAMP(registry_trampoline)
@@ -74,7 +84,9 @@ int ioctl_get(int fd,unsigned long command,void* argument,Ioctl original) {
         if(args->error==0&&args->buffer&&args->size>0) {
             const auto packed=style_config.load(std::memory_order_acquire);
             app_title::Config config{};config.top=(packed&0x1000000u)!=0;config.outside=(packed&0x2000000u)!=0;config.color=packed&0xffffffu;
-            const auto patched=app_title::patch_home_style(args->buffer,static_cast<std::size_t>(args->size),config);
+            app_title::StyleInput input{};
+            const auto patched=app_title::patch_home_style(args->buffer,static_cast<std::size_t>(args->size),config,&input);
+            if(patched!=app_title::HomeStyleResult::ignored)remember_input(input);
             if(patched==app_title::HomeStyleResult::applied) {
                 applied_config.store(packed,std::memory_order_relaxed);style_patches.fetch_add(1,std::memory_order_relaxed);
                 style_state.store(app_title::StyleState::applied,std::memory_order_release);
@@ -118,6 +130,7 @@ void activation(bool valid,const app_title::Config& config,unsigned hooks) {
     if(valid&&(!seen||previous!=config.enabled||previous_style!=packed||previous_hooks!=hooks)) {
         previous=config.enabled;previous_style=packed;previous_hooks=hooks;seen=true;stage.store(6,std::memory_order_relaxed);
         style_state.store(!config.enabled?app_title::StyleState::idle:hooks==app_title::kHooks?app_title::StyleState::waiting:app_title::StyleState::unavailable,std::memory_order_release);
+        remember_input({});
         reload_pending.store(true,std::memory_order_release);
     }
 }
@@ -171,19 +184,19 @@ app_title::RuntimeStatus snapshot() {
     s.reloads=reloads.load();s.reload_errors=reload_errors.load();s.stage=stage.load();
     s.style_state=static_cast<std::uint32_t>(style_state.load(std::memory_order_acquire));
     const auto applied=applied_config.load(std::memory_order_relaxed);s.style_color=applied&0xffffffu;s.style_top=(applied>>24)&3;
-    s.style_patches=style_patches.load();return s;
+    s.style_patches=style_patches.load();s.style_input=observed_input();return s;
 }
 void write_diagnostics(const app_title::RuntimeStatus& s,const char* path) {
-    char text[512];const int n=std::snprintf(text,sizeof(text),
-        "App Title v%s native-titleid pid=%d enabled=%u stage=%u\nkey=0x7802c916 home=NPXS40002\nregistry_calls=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu\nstyle_state=%u patches=%llu applied_position=%s applied_color=%06x applied_placement=%s\n",
-        app_title::kVersion,s.pid,s.enabled,s.stage,static_cast<unsigned long long>(s.registry_calls),static_cast<unsigned long long>(s.title_queries),static_cast<unsigned long long>(s.overrides),static_cast<unsigned long long>(s.reloads),static_cast<unsigned long long>(s.reload_errors),s.style_state,static_cast<unsigned long long>(s.style_patches),(s.style_top&1)?"top":"bottom",s.style_color,(s.style_top&2)?"outside":"inside");
+    char text[640];const int n=std::snprintf(text,sizeof(text),
+        "App Title v%s native-titleid pid=%d enabled=%u stage=%u\nkey=0x7802c916 home=NPXS40002\nregistry_calls=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu\nstyle_state=%u patches=%llu applied_position=%s applied_color=%06x applied_placement=%s\ninput_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u\n",
+        app_title::kVersion,s.pid,s.enabled,s.stage,static_cast<unsigned long long>(s.registry_calls),static_cast<unsigned long long>(s.title_queries),static_cast<unsigned long long>(s.overrides),static_cast<unsigned long long>(s.reloads),static_cast<unsigned long long>(s.reload_errors),s.style_state,static_cast<unsigned long long>(s.style_patches),(s.style_top&1)?"top":"bottom",s.style_color,(s.style_top&2)?"outside":"inside",s.style_input.format,s.style_input.buffer_size,s.style_input.payload_size,s.style_input.modules,s.style_input.startup_size,s.style_input.failure);
     if(n>0&&static_cast<std::size_t>(n)<sizeof(text))(void)app_title::atomic_file(path,text,static_cast<std::size_t>(n));
 }
 struct RuntimePublisher {
     app_title::RuntimeStatus previous{};bool have=false,diagnostic_written=false,style_diagnostic_written=false;unsigned elapsed=10;
     void update(const app_title::RuntimeStatus& s,const char* status_path=app_title::kStatus,const char* diagnostic_path="/data/AppTitle/AppTitle_shellui.log") {
         ++elapsed;
-        const bool urgent=!have||s.enabled!=previous.enabled||s.stage!=previous.stage||s.style_state!=previous.style_state||s.style_patches!=previous.style_patches;
+        const bool urgent=!have||s.enabled!=previous.enabled||s.stage!=previous.stage||s.style_state!=previous.style_state||s.style_patches!=previous.style_patches||std::memcmp(&s.style_input,&previous.style_input,sizeof(s.style_input));
         const bool changed=s.title_queries!=previous.title_queries||s.overrides!=previous.overrides||s.reloads!=previous.reloads||s.reload_errors!=previous.reload_errors;
         if(urgent||(changed&&elapsed>=10)) {
             if(app_title::atomic_file(status_path,&s,sizeof(s))){previous=s;have=true;}

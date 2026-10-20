@@ -2,7 +2,7 @@
 
 Standalone PS5 ELF payload that displays game and application title IDs on the home screen, with a persistent settings shortcut in **Media**.
 
-**0.2.10 test build:** detaches the native worker from Mono after bootstrap and closes AppInstUtil/UserService sessions after Media registration. These changes reduce resource retention; the reported delayed game-launch and FTP failures are not yet confirmed fixed. The **4.03** RAM bundle profile from 0.2.9 is retained; console testing is still required.
+**0.2.11 test build:** accepts the same exact 4.03 RAM source with transport padding or as a raw decrypted payload, while retaining the complete source digest. Short startup logs now describe the actual live input. Console confirmation is still required; the previous logs do not prove which live representation caused the console rejection.
 
 [Download v0.2.8](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) · [Русский README](README_RU.md) · [Build instructions](BUILDING.md)
 
@@ -30,8 +30,8 @@ Supported profiles:
 
 | Firmware | HomeUI format | Validation |
 | --- | --- | --- |
-| 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Added in 0.2.9; uploaded console fixture and host checks pass; console test pending |
-| 11.60 | `rnps-home 11.1.0+21887 / PS5 11.20 HOMEUI`, Hermes v89 | User-tested 0.2.8 baseline; all eight generated HomeUI outputs remain byte-for-byte identical |
+| 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Profile added in 0.2.9; raw/padded handling added in 0.2.11; console confirmation pending |
+| 11.60 | `rnps-home 11.1.0+21887 / PS5 11.20 HOMEUI`, Hermes v89 | User-tested 0.2.8 baseline; original Hermes generation/patching logic retained |
 
 Other firmware/HomeUI profiles have not been verified. Style changes are guarded by exact profile hashes; unsupported profiles are left unchanged. New Media-shortcut registration on firmware 12+ is not implemented.
 
@@ -39,7 +39,7 @@ Requires a working jailbreak and a compatible privileged ELF loader. The payload
 
 ## Installation
 
-1. Use the supplied `App_Title_v0.2.10.elf` test build for 4.03/11.60, or build it from this branch. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not support the 4.03 style profile.
+1. Use the supplied `App_Title_v0.2.11.elf` test build for 4.03/11.60, or build it from this branch. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not support the 4.03 style profile.
 2. Remove the previous App Title entry from autoload, or replace its file with the new ELF.
 3. Fully reboot the console to clear any previous resident version.
 4. Run your jailbreak, then load the ELF once or add it to your loader's autoload list.

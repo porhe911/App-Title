@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.11 — 4.03 runtime-buffer test build
+
+- Accept the exact known 4.03 RAM source when its declared length includes transport padding, bounded to the next 16 KiB allocation boundary. Keep the full source digest and every module guard; never write the extra tail.
+- Recognize the same exact source as a raw decrypted RAM payload, in addition to an RNPS envelope.
+- Add bounded input metadata to the existing startup status/log: format, buffer/payload sizes, RAM module/startup counts and refusal reason. No continuous text log or automatic dump is added.
+- Preserve all twelve 4.03 style outputs, existing colour/placement settings and the resource cleanup from 0.2.10.
+
+The old code's rejection of identical padded/raw source has been reproduced locally. The supplied 4.03 log proves successful native activation and a style refusal, but does not identify its input dimensions. Console confirmation of this candidate is still required. The delayed game/FTP report remains unverified.
+
 ## 0.2.10 — resource-lifecycle test build
 
 - Detach the owned native ShellUI worker from Mono after metadata/JIT bootstrap, including every failure path. Managed home refreshes remain on the existing UI thread.

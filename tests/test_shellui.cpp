@@ -118,6 +118,19 @@ int main(int argc,char** argv) {
         args.error=0;
         assert(ioctl_get(10,0xc0105203,&args,[](int fd,unsigned long command,void*){assert(fd==10&&command==0xc0105203);return 0;})==0);
         ++ioctl_calls;assert(bytes!=before&&style_patches.load()==1&&style_state.load()==StyleState::applied&&applied_config.load()==0x312abef);
+        if(bytes.size()==1389744) {
+            auto live=before;
+            const std::uint32_t padded=1386512;std::memcpy(live.data()+0x24,&padded,4);
+            RnpsArgs transport{live.data(),static_cast<int>(live.size()),0};
+            assert(ioctl_get(10,0xc0105203,&transport,[](int,unsigned long,void*){errno=EAGAIN;return 0;})==0&&errno==EAGAIN);
+            assert(style_patches.load()==2&&style_state.load()==StyleState::applied&&live!=before);
+            const auto state=snapshot();
+            assert(state.style_input.format==2&&state.style_input.buffer_size==live.size()&&state.style_input.payload_size==padded&&state.style_input.modules==858&&state.style_input.failure==0);
+            const auto marker=std::uint32_t(859);live=before;std::memcpy(live.data()+2848+4,&marker,4);
+            transport.buffer=live.data();
+            assert(ioctl_get(10,0xc0105203,&transport,[](int,unsigned long,void*){return 0;})==0);
+            assert(style_state.load()==StyleState::unsupported&&snapshot().style_input.modules==859&&snapshot().style_input.failure==2);
+        }
         bytes=before;activation(true,config,kRequiredHooks);frame();
         assert(style_state.load()==StyleState::unavailable);
         assert(ioctl_get(10,0xc0105203,&args,[](int,unsigned long,void*){return 0;})==0&&bytes==before);

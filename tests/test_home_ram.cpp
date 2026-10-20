@@ -27,7 +27,9 @@ int main(int argc,char** argv) {
         config.outside=mode<4||(mode>=8&&mode<10);config.top=(mode&1)!=0;
         config.color=mode>=8?0:mode%4<2?0xffffff:0x12abef;
         auto bytes=original;
-        assert(patch_home_style(bytes.data(),bytes.size(),config)==HomeStyleResult::applied);
+        StyleInput observed{};
+        assert(patch_home_style(bytes.data(),bytes.size(),config,&observed)==HomeStyleResult::applied);
+        assert(observed.format==2&&observed.buffer_size==original.size()&&observed.payload_size==plain&&observed.modules==858&&observed.startup_size==1795&&observed.failure==0);
         for(std::size_t j=0;j<bytes.size();++j)if(bytes[j]!=original[j]) {
             bool allowed=false;
             if(j>=offset)for(unsigned k=0;k<6;++k)
@@ -52,6 +54,33 @@ int main(int argc,char** argv) {
         assert(patch_home_style(bytes.data(),bytes.size(),config)!=HomeStyleResult::applied&&bytes==copy);
         const std::string path="build-host/ram_style_"+std::to_string(mode)+".bin";
         std::ofstream out(path,std::ios::binary);out.write(reinterpret_cast<const char*>(bytes.data()),bytes.size());assert(out.good());
+        // Reproduce the rejected transport shape independently of the source:
+        // the payload is identical, but the live buffer includes alignment.
+        // Exercise the raw decrypted view as well as the RNPS envelope.
+        constexpr std::size_t aligned=(1386504+0x3fff)&~std::size_t(0x3fff);
+        for(unsigned form=0;form<5;++form) {
+            const bool raw=form>=2;
+            const std::size_t payload=form==0?plain+8:form==1||form==4?aligned:form==3?plain+8:plain;
+            std::vector<unsigned char> live;
+            if(raw) {
+                live.assign(original.begin()+offset,original.begin()+offset+plain);
+                live.resize(payload,0xa5);
+            } else {
+                live.assign(original.begin(),original.begin()+offset+plain);
+                live.resize(offset+payload+384,0xa5);
+                put32(live.data()+0x20,payload);put32(live.data()+0x24,payload);put32(live.data()+0x28,offset+payload);
+            }
+            const auto transport=live;
+            assert(patch_home_style(live.data(),live.size(),config,&observed)==HomeStyleResult::applied);
+            const std::size_t start=raw?0:offset;
+            assert(!std::memcmp(live.data()+start,bytes.data()+offset,plain));
+            assert(!std::memcmp(live.data(),transport.data(),start));
+            assert(!std::memcmp(live.data()+start+plain,transport.data()+start+plain,live.size()-start-plain));
+            assert(observed.format==2&&observed.buffer_size==live.size()&&observed.payload_size==payload&&observed.failure==0);
+            auto corrupt=transport;corrupt[start+plain-2]^=1;
+            const auto copy=corrupt;
+            assert(patch_home_style(corrupt.data(),corrupt.size(),config,&observed)==HomeStyleResult::invalid&&observed.failure==3&&corrupt==copy);
+        }
     }
     for(unsigned mode=0;mode<23;++mode) {
         auto bytes=original;
@@ -76,8 +105,12 @@ int main(int argc,char** argv) {
     auto unchanged=original;config.color=0x1000000;
     assert(patch_home_style(unchanged.data(),unchanged.size(),config)==HomeStyleResult::ignored&&unchanged==original);
     config={};
+    auto unknown=original;put32(unknown.data()+offset+4,859);StyleInput observed{};
+    assert(patch_home_style(unknown.data(),unknown.size(),config,&observed)==HomeStyleResult::unsupported);
+    assert(observed.format==2&&observed.modules==859&&observed.startup_size==1795&&observed.failure==2);
+    assert(patch_home_style(unchanged.data(),plain-1,config,&observed)==HomeStyleResult::ignored);
     for(std::size_t n:{0u,1u,63u,64u,2848u,4096u,1389360u-1}) {
         assert(patch_home_style(unchanged.data(),n,config)!=HomeStyleResult::applied&&unchanged==original);
     }
-    puts("PASS: exact 4.03 RAM profile; twelve inside/outside colour/position combinations including black; module capacity/NUL preservation, unchanged headers, table, startup, launch modules and trailer; 23 tamper cases and truncated buffers refused without writes");
+    puts("PASS: 4.03 RAM profile, 12 styles and 60 raw/padded transport views; complete source digest retained, identical patches, untouched transport/tail, corrupt/truncated buffers refused and bounded mismatch metadata");
 }

@@ -3,7 +3,7 @@
 #include <cstring>
 
 namespace app_title {
-HomeStyleResult patch_home_ram(std::uint8_t*,std::size_t,const Config&);
+HomeStyleResult patch_home_ram(std::uint8_t*,std::size_t,const Config&,StyleInput*);
 namespace {
 std::uint32_t read32(const std::uint8_t* p) {
     return static_cast<std::uint32_t>(p[0])|(static_cast<std::uint32_t>(p[1])<<8)|
@@ -202,16 +202,21 @@ std::size_t build_title_style(std::uint8_t* output,std::size_t capacity,const Co
     if(!w.ok||w.used>capacity)return 0;
     std::memcpy(output,w.bytes,w.used);return w.used;
 }
-HomeStyleResult patch_home_style(void* value,std::size_t size,const Config& config) {
+HomeStyleResult patch_home_style(void* value,std::size_t size,const Config& config,StyleInput* observed) {
+    if(observed){*observed={};observed->buffer_size=size<=32*1024*1024?static_cast<std::uint32_t>(size):0;}
     if(!value||size<64||size>32*1024*1024||config.color>0xffffff)return HomeStyleResult::ignored;
     auto* bundle=static_cast<std::uint8_t*>(value);
+    // A loader may expose the decrypted RAM payload directly rather than
+    // retaining the complete RNPS envelope. The same full digest is required.
+    if(read32(bundle)==0xfb0bd1e5u)return patch_home_ram(bundle,size,config,observed);
     if(std::memcmp(bundle,"RNPSHEDR",8)||read32(bundle+8)!=2)return HomeStyleResult::ignored;
     const auto offset=read32(bundle+0x1c),region=read32(bundle+0x20),plain=read32(bundle+0x24),end=read32(bundle+0x28);
     if(offset<64||region<128||plain<128||plain>region||offset>size||region>size-offset||end!=offset+region)return HomeStyleResult::ignored;
     auto* hbc=bundle+offset;
-    if(read32(hbc)==0xfb0bd1e5u)return patch_home_ram(hbc,plain,config);
+    if(read32(hbc)==0xfb0bd1e5u)return patch_home_ram(hbc,plain,config,observed);
     constexpr std::uint8_t magic[]={0xc6,0x1f,0xbc,0x03,0xc1,0x03,0x19,0x1f};
     if(std::memcmp(hbc,magic,8))return HomeStyleResult::ignored;
+    if(observed){observed->format=1;observed->payload_size=plain;}
     if(std::memcmp(hbc+12,source_hash,20))
         return contains(hbc,plain,"isHomeTitleIdDisplayEnabled")?HomeStyleResult::unsupported:HomeStyleResult::ignored;
     constexpr std::size_t hbc_size=1780936;

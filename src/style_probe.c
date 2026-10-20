@@ -12,7 +12,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define PROBE_VERSION "0.2.10"
+#define PROBE_VERSION "0.2.11"
 #define MAX_IMAGE (32u*1024u*1024u)
 static const unsigned char hbc_magic[8]={0xc6,0x1f,0xbc,0x03,0xc1,0x03,0x19,0x1f};
 

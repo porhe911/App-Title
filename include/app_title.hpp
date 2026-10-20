@@ -5,7 +5,7 @@
 #include <cstdint>
 
 namespace app_title {
-constexpr char kVersion[] = "0.2.10";
+constexpr char kVersion[] = "0.2.11";
 #ifdef APP_TITLE_HOST_TEST
 constexpr char kDirectory[] = "./build-host/AppTitle";
 constexpr char kConfig[] = "./build-host/config.ini";
@@ -26,7 +26,7 @@ constexpr char kActive[] = "/system_tmp/app_title_active";
 constexpr char kStatus[] = "/system_tmp/app_title_status.bin";
 constexpr unsigned kPort = 39031;
 constexpr std::uint64_t kMagic = 0x3354495444505041ULL;
-constexpr std::uint64_t kStatusMagic = 0x3553544954505041ULL;
+constexpr std::uint64_t kStatusMagic = 0x3653544954505041ULL;
 constexpr unsigned kRequiredHooks = 2;
 constexpr unsigned kHooks = 3;
 constexpr long kTitleIdKey = 2013448470L;
@@ -47,6 +47,12 @@ struct Hook { std::uint64_t target, replacement, trampoline; };
 struct Request { std::uint64_t magic; std::int32_t pid; std::uint32_t count; Hook hooks[kHooks]; };
 static_assert(sizeof(Request)==88,"Native hook request ABI");
 enum class StyleState : std::uint32_t { idle=0,waiting=1,applied=2,unsupported=3,invalid=4,unavailable=5 };
+// One bounded input description for the startup result, never bundle contents.
+// format: 0=unknown, 1=Hermes, 2=RAM; failure: 0=none, 1=length,
+// 2=profile header, 3=digest, 4=module metadata, 5=generated replacement.
+struct StyleInput {
+    std::uint32_t format=0,buffer_size=0,payload_size=0,modules=0,startup_size=0,failure=0;
+};
 struct RuntimeStatus {
     std::uint64_t magic=kStatusMagic;
     std::int32_t pid=0;std::uint32_t enabled=0;
@@ -55,13 +61,15 @@ struct RuntimeStatus {
     // style_top is a position bitfield: bit 0 = top, bit 1 = outside.
     std::uint32_t style_color=0xffffff,style_top=0;
     std::uint64_t style_patches=0;
+    StyleInput style_input{};
 };
-static_assert(sizeof(RuntimeStatus)==80,"Shared status ABI");
+static_assert(sizeof(RuntimeStatus)==104,"Shared status ABI");
 struct Stats {
     unsigned icons=0, failed=0, hooks=0;int shell_pid=-1;
     const char* phase="Starting";std::uint64_t queries=0,overrides=0,reloads=0,reload_errors=0;
     std::uint32_t style_state=0,style_color=0xffffff,style_top=0,style_outside=0;
     std::uint64_t style_patches=0;
+    StyleInput style_input{};
 };
 
 bool valid_id(const char* text, std::size_t size);

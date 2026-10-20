@@ -91,6 +91,7 @@
       219
     ],
     "scope": "Exact source digest and module-table guards; bounded edits in existing module slots; no system source redistributed.",
-    "validation": "Uploaded 4.03 fixture and host execution/layout checks; console test pending."
+    "validation": "Original fixture and 60 raw/padded transport regressions; actual console input representation and console success pending.",
+    "transport": "Exact original source prefix; optional alignment bytes through next 16 KiB boundary; RNPS envelope or raw decrypted view; all tail bytes remain untouched."
   }
 }

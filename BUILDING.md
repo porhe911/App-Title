@@ -1,4 +1,4 @@
-# Build App Title 0.2.10
+# Build App Title 0.2.11
 
 Requires Linux/POSIX, LLVM/Clang 18, LLD 18, make, Python 3 and PS5 Payload SDK **v0.41**.
 
@@ -13,7 +13,7 @@ export PS5_PAYLOAD_SDK=/absolute/path/ps5-payload-sdk
 make -j4
 ```
 
-The only file needed on the console is `dist/App_Title_v0.2.10.elf`.
+The only file needed on the console is `dist/App_Title_v0.2.11.elf`.
 The shared object in `build/` is automatically embedded into the controller.
 No Actions job or external repository mutation is needed to build.
 
@@ -111,3 +111,18 @@ This verifies that working ID rendering is unchanged. Game-title VM checks
 verify TITLE_Y and top=214 outside, top=106 inside, unchanged horizontal and
 minimized offsets, and the original 62-point line container.
 
+
+## RAM transport regression
+
+`make ram-style-test RAM_UI=/private/path/HomeUI_decrypted.bin` exercises
+12 styles through five additional raw/padded views (60 accepted variants),
+checks exact equality with the original-envelope result and keeps every
+transport/tail byte unchanged. Corruption inside the original complete source
+still fails the whole-source digest. The maximum accepted RAM allocation is
+the known 1,386,504-byte source rounded up to 16 KiB; arbitrary RAM bundles
+are not accepted.
+
+The private controller/shared status ABI is 104 bytes in 0.2.11 (new magic).
+Both pieces must be built together. Short startup metadata identifies the
+observed input and refusal reason without saving source bytes. A full reboot
+is required to clear an old resident component before loading a new ELF.
