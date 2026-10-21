@@ -59,14 +59,14 @@ static void notify(const char* message) {
 }
 int main() {
     using namespace app_title;
-    if(!prepare_data_directory()){notify("App Title 0.2.11: cannot create /data/AppTitle.");return 1;}
+    if(!prepare_data_directory()){notify("App Title 0.2.12: cannot create /data/AppTitle.");return 1;}
     record_launch("main.enter",0);
     // A held advisory lock prevents duplicate autoload workers, including after a shell restart.
     const int lock=open("/system_tmp/app_title.lock",O_CREAT|O_RDWR|O_NOFOLLOW,0600);
-    if(lock<0){const int error=errno;record_launch("lock.open_failed",error);notify("App Title 0.2.11: cannot open its lock. See AppTitle_launch.log.");return 1;}
+    if(lock<0){const int error=errno;record_launch("lock.open_failed",error);notify("App Title 0.2.12: cannot open its lock. See AppTitle_launch.log.");return 1;}
     if(flock(lock,LOCK_EX|LOCK_NB)!=0) {
         const int error=errno;record_launch("lock.acquire_failed",error);close(lock);
-        notify("App Title 0.2.11: lock unavailable; another instance may be running. See AppTitle_launch.log.");return 1;
+        notify("App Title 0.2.12: lock unavailable; another instance may be running. See AppTitle_launch.log.");return 1;
     }
     reset_log();
     log_fmt("App Title v%s EXPERIMENTAL",kVersion);
@@ -88,7 +88,7 @@ int main() {
     log_line("stage=media.begin");
     if(!app_title::ps5::ensure_media_launcher(kernel_get_fw_version())) {
         record_launch("media.cleanup_failed",-1);log_line("Media service cleanup or credential restoration failed; stopping");
-        notify("App Title 0.2.11: Media setup failed. See AppTitle.log.");return 1;
+        notify("App Title 0.2.12: Media setup failed. See AppTitle.log.");return 1;
     }
     log_line("stage=media.end");
     record_launch("settings.begin",0);
@@ -96,8 +96,8 @@ int main() {
     const bool settings_ready=start_settings(config,stats);
     log_fmt("stage=settings.end ready=%d",settings_ready?1:0);
     record_launch(settings_ready?"settings.ready":"settings.failed",settings_ready?0:-1);
-    if(!settings_ready)notify("App Title 0.2.11: settings server unavailable. See AppTitle.log.");
-    else notify("App Title 0.2.11: settings ready; initializing Title IDs.");
+    if(!settings_ready)notify("App Title 0.2.12: settings server unavailable. See AppTitle.log.");
+    else notify("App Title 0.2.12: settings ready; initializing Title IDs.");
     log_line("backend=native-titleid key=0x7802c916 PNG interception disabled");
     int previous=-1,stable=0;bool online=false,style_reported=false;unsigned style_wait=0;SessionGuard session{};
     log_line("stage=worker.loop");
@@ -164,7 +164,7 @@ int main() {
             // the once flag prevents any periodic text writes.
             if(!style_reported)++style_wait;
             if(!style_reported&&(style_wait>=30||(style_wait>=8&&(!config.enabled||stats.style_state>=static_cast<unsigned>(StyleState::applied))))) {
-                log_error("HomeUI result renderer=rnps-reserved-space style_state=%u patches=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu requested=%s/%s/%06x applied=%s/%s/%06x input_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u",stats.style_state,static_cast<unsigned long long>(stats.style_patches),static_cast<unsigned long long>(stats.queries),static_cast<unsigned long long>(stats.overrides),static_cast<unsigned long long>(stats.reloads),static_cast<unsigned long long>(stats.reload_errors),config.outside?"outside":"inside",config.top?"top":"bottom",config.color,stats.style_outside?"outside":"inside",stats.style_top?"top":"bottom",stats.style_color,stats.style_input.format,stats.style_input.buffer_size,stats.style_input.payload_size,stats.style_input.modules,stats.style_input.startup_size,stats.style_input.failure);
+                log_error("HomeUI result renderer=rnps-reserved-space style_state=%u patches=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu requested=%s/%s/%06x applied=%s/%s/%06x input_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u failed_module=%u module_size=%u",stats.style_state,static_cast<unsigned long long>(stats.style_patches),static_cast<unsigned long long>(stats.queries),static_cast<unsigned long long>(stats.overrides),static_cast<unsigned long long>(stats.reloads),static_cast<unsigned long long>(stats.reload_errors),config.outside?"outside":"inside",config.top?"top":"bottom",config.color,stats.style_outside?"outside":"inside",stats.style_top?"top":"bottom",stats.style_color,stats.style_input.format,stats.style_input.buffer_size,stats.style_input.payload_size,stats.style_input.modules,stats.style_input.startup_size,stats.style_input.failure,stats.style_input.failed_module,stats.style_input.module_size);
                 style_reported=true;
             }
         }

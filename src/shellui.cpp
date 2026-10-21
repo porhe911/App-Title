@@ -44,14 +44,14 @@ std::atomic<std::uint32_t> style_config{0xffffff},applied_config{0xffffff};
 std::atomic<app_title::StyleState> style_state{app_title::StyleState::idle};
 std::atomic_bool style_hook_ready{false};
 std::atomic<unsigned long long> style_patches{0};
-std::atomic<std::uint32_t> style_input_words[6]{};
+std::atomic<std::uint32_t> style_input_words[8]{};
 void remember_input(const app_title::StyleInput& input) {
-    std::uint32_t words[6];static_assert(sizeof(words)==sizeof(input));
+    std::uint32_t words[8];static_assert(sizeof(words)==sizeof(input));
     std::memcpy(words,&input,sizeof(words));
-    for(unsigned i=0;i<6;++i)style_input_words[i].store(words[i],std::memory_order_relaxed);
+    for(unsigned i=0;i<8;++i)style_input_words[i].store(words[i],std::memory_order_relaxed);
 }
 app_title::StyleInput observed_input() {
-    std::uint32_t words[6];for(unsigned i=0;i<6;++i)words[i]=style_input_words[i].load(std::memory_order_relaxed);
+    std::uint32_t words[8];for(unsigned i=0;i<8;++i)words[i]=style_input_words[i].load(std::memory_order_relaxed);
     app_title::StyleInput input{};std::memcpy(&input,words,sizeof(words));return input;
 }
 MonoDomain* root_domain=nullptr;MonoMethod* reload_method=nullptr;
@@ -188,8 +188,8 @@ app_title::RuntimeStatus snapshot() {
 }
 void write_diagnostics(const app_title::RuntimeStatus& s,const char* path) {
     char text[640];const int n=std::snprintf(text,sizeof(text),
-        "App Title v%s native-titleid pid=%d enabled=%u stage=%u\nkey=0x7802c916 home=NPXS40002\nregistry_calls=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu\nstyle_state=%u patches=%llu applied_position=%s applied_color=%06x applied_placement=%s\ninput_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u\n",
-        app_title::kVersion,s.pid,s.enabled,s.stage,static_cast<unsigned long long>(s.registry_calls),static_cast<unsigned long long>(s.title_queries),static_cast<unsigned long long>(s.overrides),static_cast<unsigned long long>(s.reloads),static_cast<unsigned long long>(s.reload_errors),s.style_state,static_cast<unsigned long long>(s.style_patches),(s.style_top&1)?"top":"bottom",s.style_color,(s.style_top&2)?"outside":"inside",s.style_input.format,s.style_input.buffer_size,s.style_input.payload_size,s.style_input.modules,s.style_input.startup_size,s.style_input.failure);
+        "App Title v%s native-titleid pid=%d enabled=%u stage=%u\nkey=0x7802c916 home=NPXS40002\nregistry_calls=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu\nstyle_state=%u patches=%llu applied_position=%s applied_color=%06x applied_placement=%s\ninput_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u failed_module=%u module_size=%u\n",
+        app_title::kVersion,s.pid,s.enabled,s.stage,static_cast<unsigned long long>(s.registry_calls),static_cast<unsigned long long>(s.title_queries),static_cast<unsigned long long>(s.overrides),static_cast<unsigned long long>(s.reloads),static_cast<unsigned long long>(s.reload_errors),s.style_state,static_cast<unsigned long long>(s.style_patches),(s.style_top&1)?"top":"bottom",s.style_color,(s.style_top&2)?"outside":"inside",s.style_input.format,s.style_input.buffer_size,s.style_input.payload_size,s.style_input.modules,s.style_input.startup_size,s.style_input.failure,s.style_input.failed_module,s.style_input.module_size);
     if(n>0&&static_cast<std::size_t>(n)<sizeof(text))(void)app_title::atomic_file(path,text,static_cast<std::size_t>(n));
 }
 struct RuntimePublisher {

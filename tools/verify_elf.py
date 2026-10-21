@@ -24,7 +24,7 @@ def check(path,shared):
     assert 'libc.so.6' not in dynamic and 'GLIBC_' not in data.decode('latin1')
     if shared:assert '(PIE)' not in dynamic
     return data
-controller_path=ROOT/'dist/App_Title_v0.2.11.elf'
+controller_path=ROOT/'dist/App_Title_v0.2.12.elf'
 controller=check(controller_path,False)
 shared=check(ROOT/'build/App_Title_ShellUI.elf',True)
 def needed(path):
@@ -39,8 +39,8 @@ assert 'sceRegMgrGetInt' not in controller_symbols and 'mono_runtime_invoke' not
 assert shared in controller,'Controller does not embed the exact shared object'
 assert b'/data/AppTitle/AppTitle.log' in controller and b'/data/AppTitle/AppTitle_launch.log' in controller
 assert b'/data/AppTitle/AppTitle_shellui.log' in shared
-assert b'input_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u' in controller
-assert b'input_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u' in shared
+assert b'input_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u failed_module=%u module_size=%u' in controller
+assert b'input_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u failed_module=%u module_size=%u' in shared
 assert b'/data/AppTitle/AppTitle_Style_Probe.log' in controller
 assert b'/api/export' in controller and b'Settings HTTP worker entered' in controller
 assert b'/data/AppTitle.log\0' not in controller and b'/data/AppTitle_launch.log\0' not in controller

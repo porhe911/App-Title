@@ -2,7 +2,7 @@
 
 Standalone PS5 ELF payload that displays game and application title IDs on the home screen, with a persistent settings shortcut in **Media**.
 
-**0.2.11 test build:** accepts the same exact 4.03 RAM source with transport padding or as a raw decrypted payload, while retaining the complete source digest. Short startup logs now describe the actual live input. Console confirmation is still required; the previous logs do not prove which live representation caused the console rejection.
+**0.2.12 test build:** the new console log confirms a live 4.03 RAM payload 570 bytes shorter than the file export. Style modules are now resolved through the live table, guarded by exact startup and six complete target-module digests. Overall file length no longer determines compatibility. Console confirmation is pending.
 
 [Download v0.2.8](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) · [Русский README](README_RU.md) · [Build instructions](BUILDING.md)
 
@@ -30,16 +30,16 @@ Supported profiles:
 
 | Firmware | HomeUI format | Validation |
 | --- | --- | --- |
-| 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Profile added in 0.2.9; raw/padded handling added in 0.2.11; console confirmation pending |
+| 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Profile added in 0.2.9; live-table module matching added in 0.2.12; console confirmation pending |
 | 11.60 | `rnps-home 11.1.0+21887 / PS5 11.20 HOMEUI`, Hermes v89 | User-tested 0.2.8 baseline; original Hermes generation/patching logic retained |
 
-Other firmware/HomeUI profiles have not been verified. Style changes are guarded by exact profile hashes; unsupported profiles are left unchanged. New Media-shortcut registration on firmware 12+ is not implemented.
+Other firmware/HomeUI profiles have not been verified. Hermes retains its complete payload digest. RAM requires its exact startup and all six target-module digests plus a validated live table; unknown target code is left unchanged. New Media-shortcut registration on firmware 12+ is not implemented.
 
 Requires a working jailbreak and a compatible privileged ELF loader. The payload does not provide a jailbreak.
 
 ## Installation
 
-1. Use the supplied `App_Title_v0.2.11.elf` test build for 4.03/11.60, or build it from this branch. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not support the 4.03 style profile.
+1. Use the supplied `App_Title_v0.2.12.elf` test build for 4.03/11.60, or build it from this branch. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not support the 4.03 style profile.
 2. Remove the previous App Title entry from autoload, or replace its file with the new ELF.
 3. Fully reboot the console to clear any previous resident version.
 4. Run your jailbreak, then load the ELF once or add it to your loader's autoload list.

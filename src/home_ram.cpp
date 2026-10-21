@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Exact 4.03 HomeUI Indexed RAM bundle profile. Only module metadata and our
+// 4.03 HomeUI Indexed RAM profile, with exact startup/target module digests.
+// Module addresses are resolved from the live table. Only metadata and our
 // generated styles/replacements are shipped; the console's source stays local.
 #include "home_style.hpp"
 #include <cstdio>
@@ -7,15 +8,16 @@
 
 namespace app_title {
 namespace {
-constexpr std::size_t plain_size=1386504,table_base=6876;
-struct Module {unsigned id;std::size_t offset,size;const char* hash;};
+constexpr unsigned module_count=858,startup_size=1795;
+constexpr std::size_t table_base=12+8*module_count;
+struct Module {unsigned id;std::size_t size;const char* hash;};
 constexpr Module modules[]={
-    {25,67100,1205,"09a2036b256701606f04f3b524e2a66e379df0dc"},
-    {102,148437,1016,"d9dd1aa657d5110c50915619015184104f317501"},
-    {219,308526,567,"713c438f042772f45fdac128325454d60d59216b"},
-    {527,727007,5276,"a74aec5cb8490615612e42b272b539c25ed4d23f"},
-    {531,739593,1507,"a35b627618c3b5a8b0d23f4f5f0d1bc85a9c7599"},
-    {552,771182,1948,"2aef30b24d50393bdd47650dfdfbec1d8e93efa1"}
+    {25,1205,"09a2036b256701606f04f3b524e2a66e379df0dc"},
+    {102,1016,"d9dd1aa657d5110c50915619015184104f317501"},
+    {219,567,"713c438f042772f45fdac128325454d60d59216b"},
+    {527,5276,"a74aec5cb8490615612e42b272b539c25ed4d23f"},
+    {531,1507,"a35b627618c3b5a8b0d23f4f5f0d1bc85a9c7599"},
+    {552,1948,"2aef30b24d50393bdd47650dfdfbec1d8e93efa1"}
 };
 std::uint32_t read32(const std::uint8_t* p) {
     return std::uint32_t(p[0])|(std::uint32_t(p[1])<<8)|
@@ -83,39 +85,57 @@ HomeStyleResult patch_home_ram(std::uint8_t* ram,std::size_t size,const Config& 
     if(!ram||size<12||size>32*1024*1024||config.color>0xffffff||read32(ram)!=0xfb0bd1e5u)
         return HomeStyleResult::ignored;
     if(observed){observed->format=2;observed->payload_size=static_cast<std::uint32_t>(size);observed->modules=read32(ram+4);observed->startup_size=read32(ram+8);}
-    // RNPS transport/alignment bytes do not belong to the RAM source digest.
-    // Accept the same exact complete source in a larger decrypted allocation;
-    // never read less than its full size, or write any byte in the extra tail.
-    constexpr std::size_t aligned_size=(plain_size+0x3fff)&~std::size_t(0x3fff);
-    if(size<plain_size||size>aligned_size) {
-        if(observed)observed->failure=1;
-        return is_home(ram,size)?HomeStyleResult::unsupported:HomeStyleResult::ignored;
-    }
-    if(read32(ram+4)!=858||read32(ram+8)!=1795) {
+    if(read32(ram+4)!=module_count||read32(ram+8)!=startup_size) {
         if(observed)observed->failure=2;
         return is_home(ram,size)?HomeStyleResult::unsupported:HomeStyleResult::ignored;
     }
-    if(!digest_is(ram,plain_size,"1f57578fcf36d2c85281c142d76e39fc69c01fa8")) {
+    if(size<table_base+startup_size) {
+        if(observed)observed->failure=1;
+        return is_home(ram,size)?HomeStyleResult::unsupported:HomeStyleResult::ignored;
+    }
+    // The live console reports a shorter application than the file export.
+    // Qualify the application by its exact startup and the exact modules we
+    // will alter, rather than the size/hash of unrelated module source.
+    if(!digest_is(ram+table_base,startup_size,"67a129582f323eee0448924a0d7523e03259287b")) {
         if(observed)observed->failure=3;
         return is_home(ram,size)?HomeStyleResult::invalid:HomeStyleResult::ignored;
     }
-    for(const auto& m:modules) {
+    std::size_t last=table_base+startup_size;
+    for(unsigned id=0;id<module_count;++id) {
+        const auto* entry=ram+12+8*id;
+        const auto relative=read32(entry),n=read32(entry+4);
+        const std::size_t at=table_base+static_cast<std::size_t>(relative);
+        // Reject overlapping, unordered, unterminated and out-of-range source.
+        // Empty unused slots are permitted; every target must still exist.
+        if((!n&&relative)||(n&&(at<last||at>size||n>size-at||
+           ram[at+n-1]!=0||std::memchr(ram+at,0,n-1)))) {
+            if(observed){observed->failure=4;observed->failed_module=id;observed->module_size=n;}
+            return HomeStyleResult::invalid;
+        }
+        if(n)last=at+n;
+    }
+    if(size-last>0x3fff) {
+        if(observed)observed->failure=1;
+        return HomeStyleResult::invalid;
+    }
+    std::size_t offsets[6]{};
+    for(unsigned i=0;i<6;++i) {
+        const auto& m=modules[i];
         const auto* entry=ram+12+8*m.id;
-        if(read32(entry)!=m.offset-table_base||read32(entry+4)!=m.size||
-           ram[m.offset+m.size-1]!=0||std::memchr(ram+m.offset,0,m.size-1)||
-           !digest_is(ram+m.offset,m.size,m.hash)) {
-            if(observed)observed->failure=4;
+        offsets[i]=table_base+static_cast<std::size_t>(read32(entry));
+        if(read32(entry+4)!=m.size||!digest_is(ram+offsets[i],m.size,m.hash)) {
+            if(observed){observed->failure=4;observed->failed_module=m.id;observed->module_size=read32(entry+4);}
             return HomeStyleResult::invalid;
         }
     }
     char row[1205],title[1016],labels[567],space[5276],geometry[1507],tile[1948];
     if(!style(labels,sizeof(labels),config)){if(observed)observed->failure=5;return HomeStyleResult::invalid;}
     if(config.outside) {
-        Source a(row,ram+modules[0].offset,sizeof(row));
-        Source b(title,ram+modules[1].offset,sizeof(title));
-        Source c(space,ram+modules[3].offset,sizeof(space));
-        Source d(geometry,ram+modules[4].offset,sizeof(geometry));
-        Source e(tile,ram+modules[5].offset,sizeof(tile));
+        Source a(row,ram+offsets[0],sizeof(row));
+        Source b(title,ram+offsets[1],sizeof(title));
+        Source c(space,ram+offsets[3],sizeof(space));
+        Source d(geometry,ram+offsets[4],sizeof(geometry));
+        Source e(tile,ram+offsets[5],sizeof(tile));
         if(!a.replace("container:{flexDirection:\"row\",width:1920,height:168}",
                       "container:{flexDirection:\"row\",width:1920,height:336}")||
            !a.replace("strandContainer:{width:1500,height:168}","strandContainer:{width:1500,height:336}")||
@@ -137,7 +157,7 @@ HomeStyleResult patch_home_ram(std::uint8_t* ram,std::size_t size,const Config& 
     }
     const char* staged[]={row,title,labels,space,geometry,tile};
     for(unsigned i=0;i<6;++i)if(config.outside||i==2)
-        std::memcpy(ram+modules[i].offset,staged[i],modules[i].size);
+        std::memcpy(ram+offsets[i],staged[i],modules[i].size);
     return HomeStyleResult::applied;
 }
 }

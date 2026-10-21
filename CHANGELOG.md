@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.12 — live 4.03 RAM table test build
+
+- Address the observed 4.03 refusal: live buffer 1,389,168 bytes, payload 1,385,934, 858 modules and 1,795-byte startup. The exported reference payload is 570 bytes longer.
+- Resolve target module addresses from the live RAM index instead of fixed file offsets. Qualify the startup and all six complete target modules by exact digests; validate every table interval and source terminator before staging writes.
+- Permit changes in unrelated module source/length without changing those modules. Preserve raw/padded transport support, settings, existing generated labels and resource cleanup.
+- Include a refused module ID and its size in the bounded startup result. No automatic dump or periodic text logging.
+- Add a semantically equivalent 570-byte-shorter regression fixture and independent JavaScript/layout checks. Keep the WASM verifier alive until its asynchronous checks complete.
+
+The size-gate refusal is confirmed by the console log and reproduced locally. The synthetic compact fixture models the observed dimensions; it is not a capture of the console's live module contents. The actual target-module match and visual result still require a console run.
+
 ## 0.2.11 — 4.03 runtime-buffer test build
 
 - Accept the exact known 4.03 RAM source when its declared length includes transport padding, bounded to the next 16 KiB allocation boundary. Keep the full source digest and every module guard; never write the extra tail.

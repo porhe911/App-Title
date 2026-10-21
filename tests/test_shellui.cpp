@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Execute the actual native backend with mocked Mono and registry APIs.
 #include "../src/shellui.cpp"
+#include "ram_fixture.hpp"
 #include <cassert>
 #include <filesystem>
 #include <fstream>
@@ -126,8 +127,15 @@ int main(int argc,char** argv) {
             assert(style_patches.load()==2&&style_state.load()==StyleState::applied&&live!=before);
             const auto state=snapshot();
             assert(state.style_input.format==2&&state.style_input.buffer_size==live.size()&&state.style_input.payload_size==padded&&state.style_input.modules==858&&state.style_input.failure==0);
+            live=app_title_test::ram_variant(before);transport={live.data(),static_cast<int>(live.size()),0};
+            assert(ioctl_get(10,0xc0105203,&transport,[](int,unsigned long,void*){return 0;})==0);
+            assert(style_patches.load()==3&&style_state.load()==StyleState::applied&&snapshot().style_input.payload_size==1385934);
+            live=app_title_test::ram_variant(before);transport.buffer=live.data();
+            const auto at=app_title_test::ram_u32(live,2848+12+8*219)+6876+2848;live[at+100]^=1;
+            assert(ioctl_get(10,0xc0105203,&transport,[](int,unsigned long,void*){return 0;})==0);
+            assert(style_state.load()==StyleState::invalid&&snapshot().style_input.failed_module==219&&snapshot().style_input.module_size==567);
             const auto marker=std::uint32_t(859);live=before;std::memcpy(live.data()+2848+4,&marker,4);
-            transport.buffer=live.data();
+            transport={live.data(),static_cast<int>(live.size()),0};
             assert(ioctl_get(10,0xc0105203,&transport,[](int,unsigned long,void*){return 0;})==0);
             assert(style_state.load()==StyleState::unsupported&&snapshot().style_input.modules==859&&snapshot().style_input.failure==2);
         }

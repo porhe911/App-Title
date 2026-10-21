@@ -4,7 +4,7 @@
 // module source is included in this script or in release archives.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
-const originalPath=process.argv[2];
+const originalPath=process.argv[2],outputPrefix=process.argv[3]||'ram_style_';
 if(!originalPath)throw new Error('Usage: node tools/verify_ram_bundle.js /local/4.03/HomeUI_decrypted.bin');
 const original=fs.readFileSync(originalPath);
 function modules(bytes) {
@@ -24,7 +24,7 @@ let parsed=0,trees=0,geometryCases=0;
 const samples=[];
 for(let mode=0;mode<12;mode++) {
  const outside=mode<4||(mode>=8&&mode<10),top=!!(mode&1),color=mode>=8?'#000000':mode%4<2?'#ffffff':'#12abef';
- const current=modules(fs.readFileSync(path.join(root,'build-host','ram_style_'+mode+'.bin')));
+ const current=modules(fs.readFileSync(path.join(root,'build-host',outputPrefix+mode+'.bin')));
  for(const [id,source] of current) {
   new vm.Script(source,{filename:'ram-module-'+id+'.js'});parsed++;
   if(!(outside?[25,102,219,527,531,552]:[219]).includes(id))assert.equal(source,before.get(id),'Unrelated module changed: '+id);
@@ -110,6 +110,9 @@ for(let mode=0;mode<12;mode++) {
  assert.equal(mounts.length,8);
  samples.push({outside,top,styles:normalized(styles),row:normalized(row),title:normalized(title),tree:example});
 }
+// Keep the process alive while the asynchronous WASM compiler is working;
+// an unresolved Promise alone must not turn this check into a silent success.
+const verificationTimeout=setTimeout(()=>{console.error('Yoga verification timed out');process.exit(1);},30000);
 (async()=>{
  const {loadYoga}=require(path.join(root,'build-ui/node_modules/yoga-layout/src/entrypoint/wasm-async-node.js'));
  const Yoga=await loadYoga();let layouts=0;
@@ -129,4 +132,4 @@ for(let mode=0;mode<12;mode++) {
   frame.freeRecursive();layouts++;
  }
  console.log('PASS: '+parsed+' complete RAM module parses, '+trees+' actual Tile executions, '+geometryCases+' geometry cases, '+layouts+' Yoga layouts; colour/top/bottom/inside/outside and native visibility/performance branches; launch modules unchanged (host models, not a console test)');
-})().catch(error=>{console.error(error);process.exitCode=1;});
+})().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>clearTimeout(verificationTimeout));

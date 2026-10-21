@@ -1,4 +1,4 @@
-# Build App Title 0.2.11
+# Build App Title 0.2.12
 
 Requires Linux/POSIX, LLVM/Clang 18, LLD 18, make, Python 3 and PS5 Payload SDK **v0.41**.
 
@@ -13,7 +13,7 @@ export PS5_PAYLOAD_SDK=/absolute/path/ps5-payload-sdk
 make -j4
 ```
 
-The only file needed on the console is `dist/App_Title_v0.2.11.elf`.
+The only file needed on the console is `dist/App_Title_v0.2.12.elf`.
 The shared object in `build/` is automatically embedded into the controller.
 No Actions job or external repository mutation is needed to build.
 
@@ -112,17 +112,29 @@ verify TITLE_Y and top=214 outside, top=106 inside, unchanged horizontal and
 minimized offsets, and the original 62-point line container.
 
 
-## RAM transport regression
+## RAM table/transport regression
 
 `make ram-style-test RAM_UI=/private/path/HomeUI_decrypted.bin` exercises
-12 styles through five additional raw/padded views (60 accepted variants),
-checks exact equality with the original-envelope result and keeps every
-transport/tail byte unchanged. Corruption inside the original complete source
-still fails the whole-source digest. The maximum accepted RAM allocation is
-the known 1,386,504-byte source rounded up to 16 KiB; arbitrary RAM bundles
-are not accepted.
+12 styles, 60 raw/padded views and 36 variants with relocated module source.
+The main variant removes redundant function-expression parentheses in 285
+unrelated modules, preserving their function bodies, and reproduces the
+observed live dimensions: 1,385,934 payload bytes and 1,389,168 RNPS bytes.
+Its startup and six target-module sources remain exact.
 
-The private controller/shared status ABI is 104 bytes in 0.2.11 (new magic).
-Both pieces must be built together. Short startup metadata identifies the
-observed input and refusal reason without saving source bytes. A full reboot
-is required to clear an old resident component before loading a new ELF.
+The patcher qualifies the known 1,795-byte startup, all six complete target
+module digests and the full 858-entry table. It rejects unordered/overlapping,
+out-of-bounds, unterminated or internally NUL-containing module ranges.
+Source addresses come from the live index. Unrelated source is preserved;
+a whole-file source hash/length is intentionally no longer required for RAM.
+Hermes retains its existing complete-payload guard and generation logic.
+
+Independent JavaScript/geometry/layout checks for the compact fixture:
+
+```sh
+node tools/verify_ram_bundle.js build-host/ram_variant_input.bin ram_variant_style_
+```
+
+The private controller/shared status ABI is 112 bytes in 0.2.12 (new magic).
+Both pieces must be built together. Bounded startup metadata includes the
+refused module ID and size; no automatic source dump is saved. Fully reboot
+to clear an old resident component before loading a new version.

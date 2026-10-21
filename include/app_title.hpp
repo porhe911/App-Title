@@ -5,7 +5,7 @@
 #include <cstdint>
 
 namespace app_title {
-constexpr char kVersion[] = "0.2.11";
+constexpr char kVersion[] = "0.2.12";
 #ifdef APP_TITLE_HOST_TEST
 constexpr char kDirectory[] = "./build-host/AppTitle";
 constexpr char kConfig[] = "./build-host/config.ini";
@@ -26,7 +26,7 @@ constexpr char kActive[] = "/system_tmp/app_title_active";
 constexpr char kStatus[] = "/system_tmp/app_title_status.bin";
 constexpr unsigned kPort = 39031;
 constexpr std::uint64_t kMagic = 0x3354495444505041ULL;
-constexpr std::uint64_t kStatusMagic = 0x3653544954505041ULL;
+constexpr std::uint64_t kStatusMagic = 0x3753544954505041ULL;
 constexpr unsigned kRequiredHooks = 2;
 constexpr unsigned kHooks = 3;
 constexpr long kTitleIdKey = 2013448470L;
@@ -52,6 +52,7 @@ enum class StyleState : std::uint32_t { idle=0,waiting=1,applied=2,unsupported=3
 // 2=profile header, 3=digest, 4=module metadata, 5=generated replacement.
 struct StyleInput {
     std::uint32_t format=0,buffer_size=0,payload_size=0,modules=0,startup_size=0,failure=0;
+    std::uint32_t failed_module=0,module_size=0;
 };
 struct RuntimeStatus {
     std::uint64_t magic=kStatusMagic;
@@ -63,7 +64,7 @@ struct RuntimeStatus {
     std::uint64_t style_patches=0;
     StyleInput style_input{};
 };
-static_assert(sizeof(RuntimeStatus)==104,"Shared status ABI");
+static_assert(sizeof(RuntimeStatus)==112,"Shared status ABI");
 struct Stats {
     unsigned icons=0, failed=0, hooks=0;int shell_pid=-1;
     const char* phase="Starting";std::uint64_t queries=0,overrides=0,reloads=0,reload_errors=0;
