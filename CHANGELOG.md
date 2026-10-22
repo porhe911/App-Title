@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.13 — live 4.03 component matching test build
+
+- Reproduce the 0.2.12 refusal at module 527: the console reports 5,271 bytes, but the former exact-module gate required 5,276. Buffer/payload dimensions alone were insufficient to model the live input.
+- Stage and copy Space/Tile using their actual validated slot lengths. Never read or write using the exported reference length for a differently sized slot.
+- Guard the sole Space edit by its module wrapper and one unique code-level style-property context. Preserve all other Space bytes, including launch/focus handlers; no whole-Space digest is required.
+- Verify Tile executable source with a canonical digest that excludes only its build filename, five debug line numbers and redundant outer function parentheses. Other executable changes still refuse the whole operation.
+- Make inside mode independent of incompatible outside-only components. Preserve white/below-image defaults, colours, custom HEX, positions and native-title spacing.
+- Correct startup/settings wording so installed hooks are not reported as confirmed rendering when validation fails. Logging remains bounded and nonperiodic.
+- Add a compact fixture reproducing both reported outer dimensions and module 527 length, plus growing-path/debug-line cases, real JavaScript execution/layout and the actual async registry selector. These remain host models; console display still needs confirmation.
+
 ## 0.2.12 — live 4.03 RAM table test build
 
 - Address the observed 4.03 refusal: live buffer 1,389,168 bytes, payload 1,385,934, 858 modules and 1,795-byte startup. The exported reference payload is 570 bytes longer.

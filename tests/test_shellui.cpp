@@ -130,6 +130,9 @@ int main(int argc,char** argv) {
             live=app_title_test::ram_variant(before);transport={live.data(),static_cast<int>(live.size()),0};
             assert(ioctl_get(10,0xc0105203,&transport,[](int,unsigned long,void*){return 0;})==0);
             assert(style_patches.load()==3&&style_state.load()==StyleState::applied&&snapshot().style_input.payload_size==1385934);
+            live=app_title_test::ram_variant(before,10,false,1);transport={live.data(),static_cast<int>(live.size()),0};
+            assert(ioctl_get(10,0xc0105203,&transport,[](int,unsigned long,void*){return 0;})==0);
+            assert(style_patches.load()==4&&style_state.load()==StyleState::applied&&snapshot().style_input.failure==0);
             live=app_title_test::ram_variant(before);transport.buffer=live.data();
             const auto at=app_title_test::ram_u32(live,2848+12+8*219)+6876+2848;live[at+100]^=1;
             assert(ioctl_get(10,0xc0105203,&transport,[](int,unsigned long,void*){return 0;})==0);

@@ -1,4 +1,4 @@
-# Build App Title 0.2.12
+# Build App Title 0.2.13
 
 Requires Linux/POSIX, LLVM/Clang 18, LLD 18, make, Python 3 and PS5 Payload SDK **v0.41**.
 
@@ -13,7 +13,7 @@ export PS5_PAYLOAD_SDK=/absolute/path/ps5-payload-sdk
 make -j4
 ```
 
-The only file needed on the console is `dist/App_Title_v0.2.12.elf`.
+The only file needed on the console is `dist/App_Title_v0.2.13.elf`.
 The shared object in `build/` is automatically embedded into the controller.
 No Actions job or external repository mutation is needed to build.
 
@@ -121,8 +121,8 @@ unrelated modules, preserving their function bodies, and reproduces the
 observed live dimensions: 1,385,934 payload bytes and 1,389,168 RNPS bytes.
 Its startup and six target-module sources remain exact.
 
-The patcher qualifies the known 1,795-byte startup, all six complete target
-module digests and the full 858-entry table. It rejects unordered/overlapping,
+The patcher qualifies the known 1,795-byte startup and full 858-entry table.
+It rejects unordered/overlapping,
 out-of-bounds, unterminated or internally NUL-containing module ranges.
 Source addresses come from the live index. Unrelated source is preserved;
 a whole-file source hash/length is intentionally no longer required for RAM.
@@ -134,7 +134,45 @@ Independent JavaScript/geometry/layout checks for the compact fixture:
 node tools/verify_ram_bundle.js build-host/ram_variant_input.bin ram_variant_style_
 ```
 
-The private controller/shared status ABI is 112 bytes in 0.2.12 (new magic).
+The private controller/shared status ABI remains 112 bytes in 0.2.13.
 Both pieces must be built together. Bounded startup metadata includes the
 refused module ID and size; no automatic source dump is saved. Fully reboot
 to clear an old resident component before loading a new version.
+
+## Live component regression (0.2.13)
+
+The RAM test also creates a second compact fixture: 110 debug filename
+literals are shortened by five bytes each and ten unrelated function arguments
+lose redundant parentheses. It has the observed 1,385,934-byte payload,
+1,389,168-byte buffer and 5,271-byte Space module (527). Tile's synthetic length
+is 1,943 bytes; the console has not yet reported its actual length or source.
+This construction models the failure parameters and does not claim to capture
+the console's actual source differences.
+
+Outside mode checks exact source digests for 25, 102, 219 and 531. Module 527
+requires its wrapper and one unique style-property context outside a quoted
+string/comment, then changes only the order of two existing array elements.
+Module 552 requires an exact canonical digest: only its build filename, five
+debug line numbers and redundant outer function parentheses are normalized.
+The live source is not normalized. Every staged write uses its actual slot
+length, with Space capped at 8 KiB and Tile at 4 KiB. Inside mode qualifies and
+edits only module 219 after the common startup/table validation.
+
+Seventy-two additional envelope/raw cases cover compact and growing target
+slots, debug line values and optional parentheses. Missing/ambiguous/non-code
+Space contexts, excessive slot sizes and executable Tile changes must refuse
+without any live mutation. The Space source is restored by undoing its one
+reorder and compared byte for byte, covering launch and focus handlers too.
+
+Run execution/layout checks for the three generated context fixtures:
+
+```sh
+node tools/verify_ram_bundle.js build-host/ram_context_input_0.bin ram_context_0_style_
+node tools/verify_ram_bundle.js build-host/ram_context_input_1.bin ram_context_1_style_
+node tools/verify_ram_bundle.js build-host/ram_context_input_2.bin ram_context_2_style_
+node tools/verify_ram_registry.js /private/path/HomeUI_decrypted.bin
+```
+
+The registry check executes actual modules 554/555 and their transpiler helpers,
+with Recoil constructors and native Registry API mocked; it verifies the exact
+isHomeTitleIdDisplayEnabled key, boolean/integer/null values and errors.

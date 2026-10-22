@@ -19,12 +19,12 @@ report=reports[-1].name
 for doc in ['CHANGELOG.md',report,'LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
     files[doc]=(ROOT/doc).read_bytes()
 files['README_RU.md']=(f'# App Title {version}\n\n'
-    f'Тестовая версия с поиском модулей по живой таблице RAM на 4.03 и точной проверкой загрузочного кода и изменяемых модулей. На консоль нужен только {name}.\n\n'
+    f'Тестовая версия для 4.03: реальные длины модулей, проверка контекста оформления и независимый режим внутри иконки. На консоль нужен только {name}.\n\n'
     'Замени прежний ELF в autoload и полностью перезагрузи PS5. Выполни jailbreak, загрузи ELF один раз и подожди 20–30 секунд.\n\n'
     'Открой «Мультимедиа → App Title». Для первой проверки выбери «Белые ID под иконкой» и нажми «Сохранить» или OPTIONS.\n\n'
     'Исходники, лицензии и инструкция сборки: [source/README_RU.md](source/README_RU.md).\n'
-    'Проверки исходного, raw/padded и укороченного HomeUI пройдены. Успех на консоли 4.03 пока не подтверждён. Короткий AppTitle.log содержит параметры фактического буфера; постоянного журнала и автоматических дампов нет.\n').encode()
-for doc in ['Makefile','BUILDING.md','README.md','README_RU.md','CHANGELOG.md','.gitignore',report,'VALIDATION_v0.2.11_20261021.md','VALIDATION_v0.2.10_20261020.md','VALIDATION_v0.2.9_20261020.md','VALIDATION_v0.2.8_20261019.md','DEPENDENCIES.json','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
+    'Проверки исходного, raw/padded и укороченного HomeUI с модулем 527 длиной 5271 байт пройдены. Это синтетическая регрессия по параметрам журнала, не захват живого кода. Успех на консоли 4.03 пока не подтверждён. Постоянного журнала и автоматических дампов нет.\n').encode()
+for doc in ['Makefile','BUILDING.md','README.md','README_RU.md','CHANGELOG.md','.gitignore',report,'VALIDATION_v0.2.12_20261021.md','VALIDATION_v0.2.11_20261021.md','VALIDATION_v0.2.10_20261020.md','VALIDATION_v0.2.9_20261020.md','VALIDATION_v0.2.8_20261019.md','DEPENDENCIES.json','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
     files['source/'+doc]=(ROOT/doc).read_bytes()
 for directory in ['src','include','assets','tools','tests','vendor','docs']:
     for path in sorted((ROOT/directory).rglob('*')):

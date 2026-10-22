@@ -45,9 +45,9 @@ static void runtime_phase(const Config& config,Stats& stats) {
     if(ready&&s.reload_errors)stats.phase="Home reload failed; see AppTitle_shellui.log";
     else if(!config.enabled)stats.phase="Disabled";
     else if(ready&&s.style_state==static_cast<unsigned>(StyleState::applied))stats.phase="Title ID style applied";
-    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::unsupported))stats.phase="Title IDs active; this HomeUI style is unsupported";
-    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::invalid))stats.phase="Title IDs active; HomeUI style validation failed";
-    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::unavailable))stats.phase="Title IDs active; style callback unavailable";
+    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::unsupported))stats.phase="HomeUI style unsupported; ID rendering not confirmed";
+    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::invalid))stats.phase="HomeUI validation failed; ID rendering not confirmed";
+    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::unavailable))stats.phase="Style callback unavailable; ID rendering not confirmed";
     else if(ready&&s.overrides&&s.reloads)stats.phase="Native title ID override active; refresh requested";
     else stats.phase="Native hooks ready; waiting for home refresh";
 }
@@ -59,14 +59,14 @@ static void notify(const char* message) {
 }
 int main() {
     using namespace app_title;
-    if(!prepare_data_directory()){notify("App Title 0.2.12: cannot create /data/AppTitle.");return 1;}
+    if(!prepare_data_directory()){notify("App Title 0.2.13: cannot create /data/AppTitle.");return 1;}
     record_launch("main.enter",0);
     // A held advisory lock prevents duplicate autoload workers, including after a shell restart.
     const int lock=open("/system_tmp/app_title.lock",O_CREAT|O_RDWR|O_NOFOLLOW,0600);
-    if(lock<0){const int error=errno;record_launch("lock.open_failed",error);notify("App Title 0.2.12: cannot open its lock. See AppTitle_launch.log.");return 1;}
+    if(lock<0){const int error=errno;record_launch("lock.open_failed",error);notify("App Title 0.2.13: cannot open its lock. See AppTitle_launch.log.");return 1;}
     if(flock(lock,LOCK_EX|LOCK_NB)!=0) {
         const int error=errno;record_launch("lock.acquire_failed",error);close(lock);
-        notify("App Title 0.2.12: lock unavailable; another instance may be running. See AppTitle_launch.log.");return 1;
+        notify("App Title 0.2.13: lock unavailable; another instance may be running. See AppTitle_launch.log.");return 1;
     }
     reset_log();
     log_fmt("App Title v%s EXPERIMENTAL",kVersion);
@@ -88,7 +88,7 @@ int main() {
     log_line("stage=media.begin");
     if(!app_title::ps5::ensure_media_launcher(kernel_get_fw_version())) {
         record_launch("media.cleanup_failed",-1);log_line("Media service cleanup or credential restoration failed; stopping");
-        notify("App Title 0.2.12: Media setup failed. See AppTitle.log.");return 1;
+        notify("App Title 0.2.13: Media setup failed. See AppTitle.log.");return 1;
     }
     log_line("stage=media.end");
     record_launch("settings.begin",0);
@@ -96,8 +96,8 @@ int main() {
     const bool settings_ready=start_settings(config,stats);
     log_fmt("stage=settings.end ready=%d",settings_ready?1:0);
     record_launch(settings_ready?"settings.ready":"settings.failed",settings_ready?0:-1);
-    if(!settings_ready)notify("App Title 0.2.12: settings server unavailable. See AppTitle.log.");
-    else notify("App Title 0.2.12: settings ready; initializing Title IDs.");
+    if(!settings_ready)notify("App Title 0.2.13: settings server unavailable. See AppTitle.log.");
+    else notify("App Title 0.2.13: settings ready; initializing Title IDs.");
     log_line("backend=native-titleid key=0x7802c916 PNG interception disabled");
     int previous=-1,stable=0;bool online=false,style_reported=false;unsigned style_wait=0;SessionGuard session{};
     log_line("stage=worker.loop");
@@ -145,7 +145,7 @@ int main() {
                     }
                     if(received&&install_hooks(pid,req,stats.hooks)) {
                         online=true;active(pid,config,stats.hooks);runtime_phase(config,stats);
-                        notify("App Title: native Title ID display ready. Home refresh queued.");
+                        notify("App Title: hooks ready; refreshing home.");
                     } else {
                         stats.phase="Hook unavailable; see AppTitle.log";
                         RuntimeStatus diagnostic{};

@@ -90,11 +90,13 @@
     "patched_modules_inside": [
       219
     ],
-    "scope": "Exact startup and six complete target-module digests; validated live RAM table and in-place edits in resolved module slots; unrelated source may differ and remains untouched.",
-    "validation": "Reference and synthetic compact variants pass host execution/layout and bounds tests; compact fixture reproduces observed dimensions, not the actual live contents; console confirmation pending.",
+    "scope": "Exact startup and bounded live RAM index. Exact source digests for 25/102/219/531; 552 permits only build filename/debug-line and redundant wrapper-parenthesis differences via canonical digest. 527 uses one unique code-only strand style-property context and preserves every other byte. Inside mode qualifies/edits 219 only.",
+    "validation": "Reference, transport and synthetic changed-target-length cases pass host checks; synthetic compact fixture reproduces observed buffer/payload and module 527 length but is not a live capture; console confirmation pending.",
     "transport": "RNPS envelope or raw payload; ordered non-overlapping source entries and bounded trailing alignment; source addresses resolved from the live table.",
     "startup_sha1": "67a129582f323eee0448924a0d7523e03259287b",
     "observed_live_payload_size": 1385934,
-    "observed_live_buffer_size": 1389168
+    "observed_live_buffer_size": 1389168,
+    "observed_live_module_527_size": 5271,
+    "tile_canonical_sha1": "16a279f7f88af66c7d7bd9e6bcb1e52d53a95a25"
   }
 }

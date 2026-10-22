@@ -112,6 +112,7 @@ int main(int argc,char** argv) {
             }
         }
     }
+    config={};
     for(unsigned mode=0;mode<23;++mode) {
         auto bytes=original;
         if(mode<6)bytes[offset+starts[mode]]^=1;
@@ -141,10 +142,14 @@ int main(int argc,char** argv) {
     config={};
     for(unsigned k=0;k<6;++k) {
         auto corrupt=live_variant;const auto* entry=corrupt.data()+offset+12+8*ids[k];
-        const auto at=offset+6876+get32(entry);corrupt[at+100]^=1;
+        const auto at=offset+6876+get32(entry);
+        if(k==3) {
+            auto* context=std::strstr(reinterpret_cast<char*>(corrupt.data()+at),"style:[T.default.strandContainer,z.strandContainer],testID:");
+            assert(context);context[7]='U';
+        } else corrupt[at+100]^=1;
         const auto copy=corrupt;StyleInput detail{};
         assert(patch_home_style(corrupt.data(),corrupt.size(),config,&detail)==HomeStyleResult::invalid&&corrupt==copy);
-        assert(detail.failure==4&&detail.failed_module==ids[k]&&detail.module_size==lengths[k]);
+        assert(detail.failure==(k==3?5u:4u)&&detail.failed_module==ids[k]&&detail.module_size==lengths[k]);
     }
     auto missing=live_variant;put32(missing.data()+offset+12+8*219,0);put32(missing.data()+offset+16+8*219,0);
     const auto missing_before=missing;StyleInput missing_detail{};
@@ -169,5 +174,5 @@ int main(int argc,char** argv) {
     for(std::size_t n:{0u,1u,63u,64u,2848u,4096u,1389360u-1}) {
         assert(patch_home_style(unchanged.data(),n,config)!=HomeStyleResult::applied&&unchanged==original);
     }
-    puts("PASS: 4.03 RAM, 12 styles, 60 raw/padded and 36 relocated variants including the observed 1385934-byte shape; exact startup/target hashes, untouched unrelated source/transport, malformed tables and target edits refused with module details");
+    puts("PASS: 4.03 RAM, 12 styles, 60 raw/padded and 36 relocated variants including the observed 1385934-byte shape; startup/source guards, untouched unrelated source/transport, malformed tables and target edits refused with module details");
 }
