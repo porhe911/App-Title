@@ -2,7 +2,7 @@
 
 Standalone PS5 ELF payload that displays game and application title IDs on the home screen, with a persistent settings shortcut in **Media**.
 
-**0.2.13 test build:** the 4.03 log identifies a live Space module of 5,271 bytes, while 0.2.12 required 5,276. Each edit now uses the actual slot length. Space receives only one guarded style-array reorder; Tile comparison permits build filename/debug-line differences while verifying executable code. Inside mode qualifies only its own style module. Console confirmation is pending.
+**0.2.14 test build:** inside/bottom/white IDs on 4.03 are confirmed by the user's 0.2.13 screenshots and startup log. Outside mode now reparents the existing Text node using the live React/native/style bindings and retains image properties and callbacks. Last-save diagnostics and explicit live RAM export are included. The updated outside mode still needs a console check.
 
 [Download v0.2.8](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) · [Русский README](README_RU.md) · [Build instructions](BUILDING.md)
 
@@ -30,7 +30,7 @@ Supported profiles:
 
 | Firmware | HomeUI format | Validation |
 | --- | --- | --- |
-| 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Live-table and slot/context matching in 0.2.13; console confirmation pending |
+| 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Inside/bottom/white confirmed in 0.2.13; outside 0.2.14 awaiting console check |
 | 11.60 | `rnps-home 11.1.0+21887 / PS5 11.20 HOMEUI`, Hermes v89 | User-tested 0.2.8 baseline; original Hermes generation/patching logic retained |
 
 Other firmware/HomeUI profiles have not been verified. Hermes retains its complete payload digest. RAM requires its exact startup, validated live table and per-edit source guards described in [BUILDING.md](BUILDING.md). Failed guards leave the entire buffer unchanged. New Media-shortcut registration on firmware 12+ is not implemented.
@@ -39,7 +39,7 @@ Requires a working jailbreak and a compatible privileged ELF loader. The payload
 
 ## Installation
 
-1. Use the supplied `App_Title_v0.2.13.elf` test build for 4.03/11.60, or build it from this branch. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not support the 4.03 style profile.
+1. Use the supplied `App_Title_v0.2.14.elf` test build for 4.03/11.60, or build it from this branch. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not support the 4.03 style profile.
 2. Remove the previous App Title entry from autoload, or replace its file with the new ELF.
 3. Fully reboot the console to clear any previous resident version.
 4. Run your jailbreak, then load the ELF once or add it to your loader's autoload list.
@@ -62,7 +62,7 @@ placement=outside
 
 `position` accepts `top` or `bottom`; `placement` accepts `outside` or `inside`. Old three-field configuration files remain supported.
 
-`AppTitle.log` is limited to 8 KiB; `AppTitle_launch.log` and `AppTitle_shellui.log` are short startup snapshots. There is no continuous text logging. The diagnostic export runs only when explicitly requested in settings. Do not upload your system dumps with a bug report; start with the short log and firmware version.
+`AppTitle.log` is limited to 8 KiB and replaces the last HomeUI result after a save; the bounded ShellUI result is refreshed on settings/outcome changes. There is no continuous text logging. For an outside-mode failure on 4.03, explicitly request diagnostic export and return home for five seconds. Enabled RAM sessions export actual pre-edit source to `/data/AppTitle/HomeUI_live.bin`; legacy export remains available for other sessions. Settings report the actual path. Do not publish system dumps in the repository.
 
 ## Source and build
 

@@ -3,6 +3,7 @@
 // GPL-3.0-or-later reference: etaHEN / LightningMods, 2025.
 #include "app_title.hpp"
 #include "home_style.hpp"
+#include "live_ram_export.hpp"
 #include <atomic>
 #include <cerrno>
 #include <cstdio>
@@ -55,6 +56,8 @@ app_title::StyleInput observed_input() {
     app_title::StyleInput input{};std::memcpy(&input,words,sizeof(words));return input;
 }
 MonoDomain* root_domain=nullptr;MonoMethod* reload_method=nullptr;
+app_title::LiveRamExport live_export{};
+void capture_ram_source(const void* data,std::size_t size){live_export.capture(data,size);}
 #define TRAMP(name) extern "C" __attribute__((naked,noinline,used,aligned(16))) void name(){__asm__ volatile(".rept 256\n nop\n .endr\n ret\n");}
 TRAMP(registry_trampoline)
 TRAMP(update_trampoline)
@@ -187,13 +190,15 @@ app_title::RuntimeStatus snapshot() {
     s.style_patches=style_patches.load();s.style_input=observed_input();return s;
 }
 void write_diagnostics(const app_title::RuntimeStatus& s,const char* path) {
-    char text[640];const int n=std::snprintf(text,sizeof(text),
-        "App Title v%s native-titleid pid=%d enabled=%u stage=%u\nkey=0x7802c916 home=NPXS40002\nregistry_calls=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu\nstyle_state=%u patches=%llu applied_position=%s applied_color=%06x applied_placement=%s\ninput_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u failed_module=%u module_size=%u\n",
-        app_title::kVersion,s.pid,s.enabled,s.stage,static_cast<unsigned long long>(s.registry_calls),static_cast<unsigned long long>(s.title_queries),static_cast<unsigned long long>(s.overrides),static_cast<unsigned long long>(s.reloads),static_cast<unsigned long long>(s.reload_errors),s.style_state,static_cast<unsigned long long>(s.style_patches),(s.style_top&1)?"top":"bottom",s.style_color,(s.style_top&2)?"outside":"inside",s.style_input.format,s.style_input.buffer_size,s.style_input.payload_size,s.style_input.modules,s.style_input.startup_size,s.style_input.failure,s.style_input.failed_module,s.style_input.module_size);
+    const auto requested=style_config.load(std::memory_order_acquire);
+    char text[768];const int n=std::snprintf(text,sizeof(text),
+        "App Title v%s native-titleid pid=%d enabled=%u stage=%u\nkey=0x7802c916 home=NPXS40002\nregistry_calls=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu\nstyle_state=%u patches=%llu applied_position=%s applied_color=%06x applied_placement=%s\ninput_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u failed_module=%u module_size=%u\nrequested_position=%s requested_color=%06x requested_placement=%s\n",
+        app_title::kVersion,s.pid,s.enabled,s.stage,static_cast<unsigned long long>(s.registry_calls),static_cast<unsigned long long>(s.title_queries),static_cast<unsigned long long>(s.overrides),static_cast<unsigned long long>(s.reloads),static_cast<unsigned long long>(s.reload_errors),s.style_state,static_cast<unsigned long long>(s.style_patches),(s.style_top&1)?"top":"bottom",s.style_color,(s.style_top&2)?"outside":"inside",s.style_input.format,s.style_input.buffer_size,s.style_input.payload_size,s.style_input.modules,s.style_input.startup_size,s.style_input.failure,s.style_input.failed_module,s.style_input.module_size,(requested&0x1000000u)?"top":"bottom",requested&0xffffffu,(requested&0x2000000u)?"outside":"inside");
     if(n>0&&static_cast<std::size_t>(n)<sizeof(text))(void)app_title::atomic_file(path,text,static_cast<std::size_t>(n));
 }
 struct RuntimePublisher {
     app_title::RuntimeStatus previous{};bool have=false,diagnostic_written=false,style_diagnostic_written=false;unsigned elapsed=10;
+    app_title::RuntimeStatus style_previous{};std::uint32_t previous_requested=0xffffffffu;
     void update(const app_title::RuntimeStatus& s,const char* status_path=app_title::kStatus,const char* diagnostic_path="/data/AppTitle/AppTitle_shellui.log") {
         ++elapsed;
         const bool urgent=!have||s.enabled!=previous.enabled||s.stage!=previous.stage||s.style_state!=previous.style_state||s.style_patches!=previous.style_patches||std::memcmp(&s.style_input,&previous.style_input,sizeof(s.style_input));
@@ -205,13 +210,17 @@ struct RuntimePublisher {
         if(!diagnostic_written&&(s.stage>=100||s.reloads||s.reload_errors)) {
             write_diagnostics(s,diagnostic_path);diagnostic_written=true;
         }
-        if(!style_diagnostic_written&&s.style_state>=static_cast<unsigned>(app_title::StyleState::applied)) {
-            write_diagnostics(s,diagnostic_path);style_diagnostic_written=true;
+        const auto requested=style_config.load(std::memory_order_acquire);
+        if(s.style_state<static_cast<unsigned>(app_title::StyleState::applied))style_diagnostic_written=false;
+        if(s.style_state>=static_cast<unsigned>(app_title::StyleState::applied)&&(!style_diagnostic_written||requested!=previous_requested||
+           s.style_state!=style_previous.style_state||std::memcmp(&s.style_input,&style_previous.style_input,sizeof(s.style_input)))) {
+            write_diagnostics(s,diagnostic_path);style_diagnostic_written=true;previous_requested=requested;style_previous=s;
         }
     }
 };
 }
 extern "C" __attribute__((noreturn,visibility("default"))) void* elf_main(void*) {
+    app_title::set_ram_source_observer(capture_ram_source);
     RuntimePublisher publisher{};publisher.update(snapshot());
     app_title::Request request{};const bool ready=prepare_request(request);
     if(ready&&!app_title::atomic_file(app_title::kRequest,&request,sizeof(request)))stage.store(107);
@@ -225,6 +234,8 @@ extern "C" __attribute__((noreturn,visibility("default"))) void* elf_main(void*)
             valid=fscanf(f,"%d %d %d %x %u %c",&pid,&on,&top,&color,&hooks,&extra)==5&&pid==getpid()&&(on==0||on==1)&&top>=0&&top<=3&&color<=0xffffff&&(hooks==app_title::kRequiredHooks||hooks==app_title::kHooks);fclose(f);
         }
         app_title::Config config{};config.enabled=on==1;config.top=(top&1)!=0;config.outside=(top&2)!=0;config.color=color;
-        activation(valid,config,hooks);publisher.update(snapshot());usleep(500000);
+        activation(valid,config,hooks);publisher.update(snapshot());
+        if(live_export.poll(valid&&config.enabled&&hooks==app_title::kHooks&&observed_input().format==2))reload_pending.store(true,std::memory_order_release);
+        usleep(500000);
     }
 }

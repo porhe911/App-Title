@@ -40,6 +40,11 @@ int main() {
     for(unsigned i=0;i<1000;++i)log_error("error %u: bounded log retains its start",i);
     assert(fs::file_size(log)<=kLogLimit&&contents(log).find("startup begins")==0);
     const auto capped=contents(log);log_line("no normal logging after activation");assert(contents(log)==capped);
+    reset_log(log);log_line("startup evidence");finish_startup_log();
+    for(unsigned i=0;i<1000;++i)log_home_result("HomeUI result requested=outside/bottom/ffffff result=%u",i);
+    const auto latest=contents(log);
+    assert(latest.find("startup evidence\n")==0&&latest.find("result=999\n")!=std::string::npos);
+    assert(latest.find("HomeUI result ")==latest.rfind("HomeUI result ")&&latest.size()<256);
     reset_log(log);log_line("next activation");assert(contents(log)=="next activation\n");finish_startup_log();
     const char* launch="build-host/runtime/launch.log";
     assert(record_launch("main.enter",0,launch));

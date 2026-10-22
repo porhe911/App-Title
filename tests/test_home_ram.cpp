@@ -146,10 +146,12 @@ int main(int argc,char** argv) {
         if(k==3) {
             auto* context=std::strstr(reinterpret_cast<char*>(corrupt.data()+at),"style:[T.default.strandContainer,z.strandContainer],testID:");
             assert(context);context[7]='U';
+        } else if(k==5) {
+            auto* context=std::strstr(reinterpret_cast<char*>(corrupt.data()+at),".default.titleId");assert(context);context[15]='Z';
         } else corrupt[at+100]^=1;
         const auto copy=corrupt;StyleInput detail{};
         assert(patch_home_style(corrupt.data(),corrupt.size(),config,&detail)==HomeStyleResult::invalid&&corrupt==copy);
-        assert(detail.failure==(k==3?5u:4u)&&detail.failed_module==ids[k]&&detail.module_size==lengths[k]);
+        assert(detail.failure==(k==3||k==5?5u:4u)&&detail.failed_module==ids[k]&&detail.module_size==lengths[k]);
     }
     auto missing=live_variant;put32(missing.data()+offset+12+8*219,0);put32(missing.data()+offset+16+8*219,0);
     const auto missing_before=missing;StyleInput missing_detail{};

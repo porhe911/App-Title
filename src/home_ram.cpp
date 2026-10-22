@@ -3,11 +3,14 @@
 // Module addresses are resolved from the live table. Only metadata and our
 // generated styles/replacements are shipped; the console's source stays local.
 #include "home_style.hpp"
+#include "ram_js.hpp"
 #include <cstdio>
 #include <cstring>
+#include <atomic>
 
 namespace app_title {
 namespace {
+std::atomic<RamSourceObserver> source_observer{nullptr};
 constexpr unsigned module_count=858,startup_size=1795;
 constexpr std::size_t table_base=12+8*module_count;
 struct Module {unsigned id;std::size_t size;const char* hash;};
@@ -30,44 +33,6 @@ bool digest_is(const void* bytes,std::size_t size,const char* expected) {
         if(expected[i*2]!=hex[digest[i]>>4]||expected[i*2+1]!=hex[digest[i]&15])return false;
     return true;
 }
-// Only Tile's build filename, five debug line numbers and redundant outer
-// function parentheses may vary. Every executable byte, including imports,
-// visibility and render code,
-// must match. This normalization is for comparison; it never edits live source.
-bool tile_digest(const std::uint8_t* input,std::size_t size) {
-    char canonical[4096];
-    if(!size||size>sizeof(canonical))return false;
-    std::memcpy(canonical,input,size);
-    char* first=std::strstr(canonical,",p=\"");
-    if(!first||std::strstr(first+1,",p=\""))return false;
-    first+=4;char* end=std::strchr(first,'\"');
-    constexpr char suffix[]="/packages/home-ui/src/components/Tile/index.tsx";
-    if(!end||static_cast<std::size_t>(end-first)<sizeof(suffix)-1||
-       std::memcmp(end-(sizeof(suffix)-1),suffix,sizeof(suffix)-1))return false;
-    for(char* p=first;p<end;++p)
-        if(static_cast<unsigned char>(*p)<32||*p=='\\')return false;
-    std::memmove(first,end,std::strlen(end)+1);
-    constexpr char line[]="__source:{fileName:p,lineNumber:";
-    char* from=canonical;unsigned count=0;
-    while(char* at=std::strstr(from,line)) {
-        at+=sizeof(line)-1;char* number_end=at;
-        while(*number_end>='0'&&*number_end<='9')++number_end;
-        if(number_end==at||*number_end!='}'||number_end-at>8)return false;
-        *at='0';std::memmove(at+1,number_end,std::strlen(number_end)+1);
-        from=at+1;++count;
-    }
-    constexpr char wrapper[]="__haul_application.l(552,";
-    if(std::strncmp(canonical,wrapper,sizeof(wrapper)-1))return false;
-    char* argument=canonical+sizeof(wrapper)-1;
-    if(*argument=='(') {
-        auto length=std::strlen(canonical);
-        if(length<3||std::strcmp(canonical+length-3,"));"))return false;
-        std::memmove(argument,argument+1,std::strlen(argument+1)+1);--length;
-        std::memmove(canonical+length-3,canonical+length-2,3);
-    }
-    return count==5&&digest_is(canonical,std::strlen(canonical)+1,
-        "16a279f7f88af66c7d7bd9e6bcb1e52d53a95a25");
-}
 bool is_home(const std::uint8_t* data,std::size_t size) {
     constexpr char marker[]="isHomeTitleIdDisplayEnabled";
     if(size<sizeof(marker)-1)return false;
@@ -83,39 +48,13 @@ struct Source {
     Source(char* out,const std::uint8_t* input,std::size_t size):data(out),capacity(size),used(size-1) {
         std::memcpy(data,input,size);
     }
-    bool code_at(const char* position) const {
-        char quote=0;bool line=false,block=false;
-        for(const char* p=data;p<position;++p) {
-            if(line){if(*p=='\n'||*p=='\r')line=false;continue;}
-            if(block){if(*p=='*'&&p+1<position&&p[1]=='/'){block=false;++p;}continue;}
-            if(quote){if(*p=='\\'&&p+1<position)++p;else if(*p==quote)quote=0;continue;}
-            if(*p=='\''||*p=='\"'||*p=='`')quote=*p;
-            else if(*p=='/'&&p+1<position&&p[1]=='/'){line=true;++p;}
-            else if(*p=='/'&&p+1<position&&p[1]=='*'){block=true;++p;}
-            // The known Space prefix has no division/regexp literals. Refuse
-            // an ambiguous slash rather than mistake regexp text for code.
-            else if(*p=='/')return false;
-        }
-        return !quote&&!line&&!block;
-    }
-    bool replace(const char* before,const char* after,bool require_code=false) {
+    bool replace(const char* before,const char* after) {
         char* at=std::strstr(data,before);
         const auto from=std::strlen(before),to=std::strlen(after);
-        if(!at||!from||std::strstr(at+from,before)||(require_code&&!code_at(at))||used-from+to>=capacity)return false;
+        if(!at||!from||std::strstr(at+from,before)||used-from+to>=capacity)return false;
         const auto offset=static_cast<std::size_t>(at-data);
         std::memmove(at+to,at+from,used-offset-from+1);
         std::memcpy(at,after,to);used=used-from+to;return true;
-    }
-    bool range(const char* first,const char* end,const char* replacement) {
-        char* left=std::strstr(data,first);
-        if(!left||std::strstr(left+std::strlen(first),first))return false;
-        char* right=std::strstr(left,end);
-        if(!right||std::strstr(right+std::strlen(end),end))return false;
-        const auto from=static_cast<std::size_t>(right-left),to=std::strlen(replacement);
-        if(used-from+to>=capacity)return false;
-        const auto offset=static_cast<std::size_t>(left-data);
-        std::memmove(left+to,right,used-offset-from+1);
-        std::memcpy(left,replacement,to);used=used-from+to;return true;
     }
     void finish() {std::memset(data+used,' ',capacity-used-1);data[capacity-1]=0;}
 };
@@ -134,6 +73,7 @@ bool style(char* out,std::size_t size,const Config& config) {
     std::memset(out+n,' ',size-static_cast<std::size_t>(n)-1);out[size-1]=0;return true;
 }
 }
+void set_ram_source_observer(RamSourceObserver observer){source_observer.store(observer,std::memory_order_release);}
 HomeStyleResult patch_home_ram(std::uint8_t* ram,std::size_t size,const Config& config,StyleInput* observed) {
     if(!ram||size<12||size>32*1024*1024||config.color>0xffffff||read32(ram)!=0xfb0bd1e5u)
         return HomeStyleResult::ignored;
@@ -170,6 +110,7 @@ HomeStyleResult patch_home_ram(std::uint8_t* ram,std::size_t size,const Config& 
         if(observed)observed->failure=1;
         return HomeStyleResult::invalid;
     }
+    if(const auto observer=source_observer.load(std::memory_order_acquire))observer(ram,size);
     std::size_t offsets[6]{},sizes[6]{};
     for(unsigned i=0;i<6;++i) {
         if(!config.outside&&i!=2)continue;
@@ -178,20 +119,11 @@ HomeStyleResult patch_home_ram(std::uint8_t* ram,std::size_t size,const Config& 
         offsets[i]=table_base+static_cast<std::size_t>(read32(entry));
         sizes[i]=read32(entry+4);
         bool qualified=false;
-        if(i==3) {
-            // Space contains launch/focus handlers that are unrelated to this
-            // edit. Do not replace or fingerprint those handlers. The sole
-            // accepted change is one complete strand style-property context.
-            constexpr char wrapper[]="__haul_application.l(527,";
-            constexpr char function[]="function(e,t,n){";
-            if(sizes[i]>sizeof(wrapper)+sizeof(function)&&sizes[i]<=8192&&
-               !std::memcmp(ram+offsets[i],wrapper,sizeof(wrapper)-1)) {
-                const char* argument=reinterpret_cast<const char*>(ram+offsets[i])+sizeof(wrapper)-1;
-                if(*argument=='(')++argument;
-                qualified=!std::memcmp(argument,function,sizeof(function)-1);
-            }
-        } else if(i==5)qualified=tile_digest(ram+offsets[i],sizes[i]);
-        else qualified=sizes[i]==m.size&&digest_is(ram+offsets[i],m.size,m.hash);
+        if(i==3||i==5) {
+            ram_js::Span require_name;
+            qualified=sizes[i]>1&&sizes[i]<=(i==3?8192u:4096u)&&
+                ram_js::Document(reinterpret_cast<const char*>(ram+offsets[i])).wrapper(m.id,require_name);
+        } else qualified=sizes[i]==m.size&&digest_is(ram+offsets[i],m.size,m.hash);
         if(!qualified) {
             if(observed){observed->failure=4;observed->failed_module=m.id;observed->module_size=read32(entry+4);}
             return HomeStyleResult::invalid;
@@ -205,9 +137,12 @@ HomeStyleResult patch_home_ram(std::uint8_t* ram,std::size_t size,const Config& 
         Source c(space,ram+offsets[3],sizes[3]);
         Source d(geometry,ram+offsets[4],sizeof(geometry));
         Source e(tile,ram+offsets[5],sizes[5]);
-        if(!c.replace("style:[T.default.strandContainer,z.strandContainer],testID:\"strand-container\"",
-                      "style:[z.strandContainer,T.default.strandContainer],testID:\"strand-container\"",true)) {
+        if(!ram_js::strand_priority(c.data,c.capacity)) {
             if(observed){observed->failure=5;observed->failed_module=527;observed->module_size=sizes[3];}
+            return HomeStyleResult::invalid;
+        }
+        if(!ram_js::outside_tile(e.data,e.capacity)) {
+            if(observed){observed->failure=5;observed->failed_module=552;observed->module_size=sizes[5];}
             return HomeStyleResult::invalid;
         }
         if(!a.replace("container:{flexDirection:\"row\",width:1920,height:168}",
@@ -217,14 +152,7 @@ HomeStyleResult patch_home_ram(std::uint8_t* ram,std::size_t size,const Config& 
            !d.replace("Object.defineProperty(t,\"__esModule\",{value:!0})","t.__esModule=!0")||
            !d.replace("var t=e/2","var t=(e+96)/2")||
            !d.replace("width:e,height:e}","width:e,height:e+96}")||
-           !d.replace("{translateY:s}","{translateY:s+48}")||
-           !e.range("y=l().default.createElement(i().Image,",",C=[d.default.imageWrapper,d.default.image]",
-               "y=l().default.createElement(i().View,{style:d.default.imageWrapper},"
-               "l().default.createElement(i().Image,{fallbackSource:h,source:N,"
-               "style:[d.default.image,{marginTop:48}]},"
-               "l().default.createElement(i().Animated.View,{style:[u,d.default.image]})),"
-               "k&&l().default.createElement(i().Text,{style:d.default.titleId},S))")||
-           !e.replace("C=[d.default.imageWrapper,d.default.image]","C=[d.default.imageWrapper]"))
+           !d.replace("{translateY:s}","{translateY:s+48}"))
             {if(observed)observed->failure=5;return HomeStyleResult::invalid;}
         a.finish();b.finish();c.finish();d.finish();e.finish();
     }

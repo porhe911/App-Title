@@ -5,7 +5,7 @@
 #include <cstdint>
 
 namespace app_title {
-constexpr char kVersion[] = "0.2.13";
+constexpr char kVersion[] = "0.2.14";
 #ifdef APP_TITLE_HOST_TEST
 constexpr char kDirectory[] = "./build-host/AppTitle";
 constexpr char kConfig[] = "./build-host/config.ini";
@@ -85,6 +85,7 @@ void log_fmt(const char* format, ...);
 void reset_log(const char* path=kLog);
 void finish_startup_log();
 void log_error(const char* format, ...);
+void log_home_result(const char* format, ...);
 // One short snapshot per launch/stage, never a periodic log. Independent of
 // the resident worker's main journal so rejected relaunches remain visible.
 bool record_launch(const char* stage,int result,const char* path=kLaunchLog);
@@ -92,6 +93,7 @@ bool prepare_data_directory(const char* path=kDirectory);
 bool request_style_export();
 void run_style_export();
 const char* style_export_state();
+const char* style_export_path();
 bool reserve_session(int pid,const char* path=kSession);
 bool render_icon(const char* source, const char* output, const char* id,
                  const Config& config, const char* font);

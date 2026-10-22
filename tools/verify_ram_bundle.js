@@ -8,7 +8,7 @@ const originalPath=process.argv[2],outputPrefix=process.argv[3]||'ram_style_';
 if(!originalPath)throw new Error('Usage: node tools/verify_ram_bundle.js /local/4.03/HomeUI_decrypted.bin');
 const original=fs.readFileSync(originalPath);
 function modules(bytes) {
- const start=bytes.readUInt32LE(0x1c),plain=bytes.readUInt32LE(0x24),ram=bytes.subarray(start,start+plain);
+ const raw=bytes.readUInt32LE(0)===0xfb0bd1e5,start=raw?0:bytes.readUInt32LE(0x1c),plain=raw?bytes.length:bytes.readUInt32LE(0x24),ram=bytes.subarray(start,start+plain);
  assert.equal(ram.readUInt32LE(0),0xfb0bd1e5);
  const count=ram.readUInt32LE(4),base=12+count*8,out=new Map();
  for(let id=0;id<count;id++) {
@@ -30,7 +30,8 @@ for(let mode=0;mode<12;mode++) {
   if(!(outside?[25,102,219,527,531,552]:[219]).includes(id))assert.equal(source,before.get(id),'Unrelated module changed: '+id);
  }
  if(outside) {
-  assert.equal(current.get(527).replace('[z.strandContainer,T.default.strandContainer]','[T.default.strandContainer,z.strandContainer]'),before.get(527));
+  const expected=before.get(527).replace(/style:\[([\w$]+\.default\.strandContainer),([\w$]+\.strandContainer)\](?=,testID:"strand-container")/,(all,base,startup)=>'style:['+startup+','+base+']');
+  assert.notEqual(expected,before.get(527));assert.equal(current.get(527),expected);
   for(const name of ['t.compare=function','t.removeItem=function']) {
    const tail=s=>s.slice(s.indexOf(name));
    assert.equal(tail(current.get(531)),tail(before.get(531)),'Data/focus helper changed');
@@ -92,6 +93,7 @@ for(let mode=0;mode<12;mode++) {
   const image=outside?frame.props.children[0]:frame;
   const label=outside?frame.props.children[1]:image.props.children.props.children;
   assert.equal(image.type,'Image');assert.equal(image.props.source.uri,'icon.png');assert.equal(image.props.fallbackSource.uri,'fallback:fallback.png');
+  if(before.get(552).includes('resizeMode:"contain"')){assert.equal(image.props.resizeMode,'contain');assert.equal(image.props.onError,props.loadComponents);}
   assert.equal(image.props.children.type,'Animated.View');assert.equal(image.props.children.props.style[0],mat);
   if(visible&&loadState==='hasValue') {
    assert.equal(label.type,'Text');assert.equal(label.props.children,props.titleId);

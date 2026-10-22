@@ -90,13 +90,13 @@
     "patched_modules_inside": [
       219
     ],
-    "scope": "Exact startup and bounded live RAM index. Exact source digests for 25/102/219/531; 552 permits only build filename/debug-line and redundant wrapper-parenthesis differences via canonical digest. 527 uses one unique code-only strand style-property context and preserves every other byte. Inside mode qualifies/edits 219 only.",
-    "validation": "Reference, transport and synthetic changed-target-length cases pass host checks; synthetic compact fixture reproduces observed buffer/payload and module 527 length but is not a live capture; console confirmation pending.",
+    "scope": "Exact startup/table and 25/102/219/531 digests; 527/552 use bounded React-call, import and property guards with real live bindings. Preserve original image props, visibility and text expression. All writes staged in actual slots; inside edits 219 only.",
+    "validation": "User confirmed inside/bottom/white display on 4.03 in 0.2.13. Outside 0.2.14 passes host structure/execution/layout cases; console confirmation pending. Latest provided startup log describes inside mode, not the later outside failure.",
     "transport": "RNPS envelope or raw payload; ordered non-overlapping source entries and bounded trailing alignment; source addresses resolved from the live table.",
     "startup_sha1": "67a129582f323eee0448924a0d7523e03259287b",
     "observed_live_payload_size": 1385934,
     "observed_live_buffer_size": 1389168,
     "observed_live_module_527_size": 5271,
-    "tile_canonical_sha1": "16a279f7f88af66c7d7bd9e6bcb1e52d53a95a25"
+    "manual_diagnostics": "Explicit request only: capture validated raw RAM before our edits on a forced home refresh; 4 MiB allocation cap, worker-owned file IO, success/timeout cleanup. No automatic dump."
   }
 }

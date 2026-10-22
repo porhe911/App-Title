@@ -141,6 +141,25 @@ int main(int argc,char** argv) {
             transport={live.data(),static_cast<int>(live.size()),0};
             assert(ioctl_get(10,0xc0105203,&transport,[](int,unsigned long,void*){return 0;})==0);
             assert(style_state.load()==StyleState::unsupported&&snapshot().style_input.modules==859&&snapshot().style_input.failure==2);
+            fs::create_directories("build-host/live-export");
+            const char* request_path="build-host/live-export/request.bin";const char* result_path="build-host/live-export/result.bin";
+            LiveExportClient client{};assert(client.begin(getpid(),request_path,result_path));
+            assert(live_export.poll(true,request_path,result_path,"build-host/ram_live_input.bin"));
+            set_ram_source_observer(capture_ram_source);
+            live=app_title_test::ram_variant(before,10,false,1);const auto original_live=live;
+            transport={live.data(),static_cast<int>(live.size()),0};
+            assert(ioctl_get(10,0xc0105203,&transport,[](int,unsigned long,void*){return 0;})==0&&live!=original_live);
+            assert(!live_export.poll(true,request_path,result_path,"build-host/ram_live_input.bin")&&client.poll(request_path,result_path)==1);
+            std::ifstream captured_file("build-host/ram_live_input.bin",std::ios::binary);
+            const std::vector<unsigned char> captured((std::istreambuf_iterator<char>(captured_file)),{});
+            assert(captured.size()==1385934&&!std::memcmp(captured.data(),original_live.data()+2848,captured.size()));
+            const auto dump_stamp=fs::last_write_time("build-host/ram_live_input.bin");
+            for(unsigned i=0;i<100;++i)assert(!live_export.poll(true,request_path,result_path,"build-host/ram_live_input.bin"));
+            assert(fs::last_write_time("build-host/ram_live_input.bin")==dump_stamp);
+            assert(client.begin(getpid(),request_path,result_path)&&live_export.poll(true,request_path,result_path,"build-host/ram_live_input.bin"));
+            for(unsigned i=0;i<24;++i)assert(!live_export.poll(true,request_path,result_path,"build-host/ram_live_input.bin"));
+            assert(client.poll(request_path,result_path)==-1&&fs::last_write_time("build-host/ram_live_input.bin")==dump_stamp);
+            set_ram_source_observer(nullptr);fs::remove_all("build-host/live-export");
         }
         bytes=before;activation(true,config,kRequiredHooks);frame();
         assert(style_state.load()==StyleState::unavailable);
@@ -158,6 +177,13 @@ int main(int argc,char** argv) {
     ++state.overrides;publisher.update(state,"build-host/native/status.bin","build-host/native/diagnostic.log");
     std::ifstream file("build-host/native/status.bin",std::ios::binary);RuntimeStatus loaded{};file.read(reinterpret_cast<char*>(&loaded),sizeof(loaded));assert(loaded.overrides==state.overrides);
     assert(fs::last_write_time("build-host/native/diagnostic.log")==text_stamp);
+    style_config.store(0x2ffffff);state.style_state=4;state.style_input.failure=5;state.style_input.failed_module=552;
+    publisher.update(state,"build-host/native/status.bin","build-host/native/diagnostic.log");
+    std::ifstream diagnostic("build-host/native/diagnostic.log");const std::string last((std::istreambuf_iterator<char>(diagnostic)),{});
+    assert(last.find("requested_placement=outside")!=std::string::npos&&last.find("failed_module=552")!=std::string::npos&&last.size()<768);
+    const auto result_stamp=fs::last_write_time("build-host/native/diagnostic.log");
+    for(unsigned i=0;i<1000;++i)publisher.update(state,"build-host/native/status.bin","build-host/native/diagnostic.log");
+    assert(fs::last_write_time("build-host/native/diagnostic.log")==result_stamp);
     fs::remove("build-host/native/status.bin");fs::remove("build-host/native/diagnostic.log");fs::remove("build-host/native");
     puts("PASS: balanced Mono attachment on all bootstrap paths, native worker detached, UI-thread reloads and errno preserved, exact registry key, GC pinning, reentry/exception guards, colour/position changes, style routing and bounded logging");
 }

@@ -136,6 +136,29 @@ void log_fmt(const char* fmt,...) {
 void log_error(const char* fmt,...) {
     char text[512];va_list ap;va_start(ap,fmt);std::vsnprintf(text,sizeof(text),fmt,ap);va_end(ap);append_log(text,true);
 }
+void log_home_result(const char* fmt,...) {
+    char line[640];va_list ap;va_start(ap,fmt);const int count=std::vsnprintf(line,sizeof(line),fmt,ap);va_end(ap);
+    if(count<=0||static_cast<std::size_t>(count)>=sizeof(line)-1||std::strncmp(line,"HomeUI result ",14))return;
+    line[count]='\n';const auto length=static_cast<std::size_t>(count)+1;
+    pthread_mutex_lock(&log_mutex);
+    char previous[kLogLimit+1]{},next[kLogLimit];std::size_t used=0;
+    const int fd=open(log_path,O_RDONLY|O_NOFOLLOW);
+    if(fd>=0) {
+        while(used<kLogLimit){const auto n=read(fd,previous+used,kLogLimit-used);if(n<0&&errno==EINTR)continue;if(n<=0)break;used+=static_cast<std::size_t>(n);}
+        close(fd);
+    }
+    std::size_t written=0;
+    for(std::size_t p=0;p<used;) {
+        std::size_t end=p;while(end<used&&previous[end]!='\n')++end;if(end<used)++end;
+        if((end-p<14||std::memcmp(previous+p,"HomeUI result ",14))&&written+end-p+length<=kLogLimit) {
+            std::memcpy(next+written,previous+p,end-p);written+=end-p;
+        }
+        p=end;
+    }
+    std::memcpy(next+written,line,length);written+=length;
+    (void)atomic_file(log_path,next,written);
+    pthread_mutex_unlock(&log_mutex);
+}
 bool record_launch(const char* stage,int result,const char* path) {
     char text[256];
     const int n=std::snprintf(text,sizeof(text),"App Title v%s launch\npid=%d stage=%s result=%d\n",kVersion,static_cast<int>(getpid()),stage,result);

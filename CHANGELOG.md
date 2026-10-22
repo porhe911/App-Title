@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.14 — outside renderer and live diagnostics test build
+
+- Record user confirmation of inside/bottom/white IDs on 4.03 in 0.2.13. Its supplied startup result is successful inside mode; it does not diagnose the later outside-mode screenshots.
+- Replace hardcoded Space/Tile variable matching and a whole-Tile canonical fingerprint with bounded React-call, style-property and module-import guards. Reuse the original image props, visibility condition and Text expression when moving the ID outside; retain callbacks and binding names.
+- Keep all twelve reference outputs byte-identical to the old baseline. Add renamed-binding, arithmetic, extra-image-prop/callback and fake-context regressions.
+- Replace the main log's last result after a settings save; refresh the bounded ShellUI result on a configuration/outcome change. Add current error metadata to the settings API and translate current failure phases.
+- The existing manual export button can now request the actual validated RAM source before our edits. Allocation/file IO run on the native worker, capture is armed only by the explicit request, and resources are freed on completion/timeout. No automatic dump or periodic text log.
+- Inside is console-confirmed; updated outside rendering and live export remain console-unconfirmed. Host execution/layout, memory, protocol, lifecycle and settings checks pass.
+
 ## 0.2.13 — live 4.03 component matching test build
 
 - Reproduce the 0.2.12 refusal at module 527: the console reports 5,271 bytes, but the former exact-module gate required 5,276. Buffer/payload dimensions alone were insufficient to model the live input.

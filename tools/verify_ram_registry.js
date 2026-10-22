@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Execute the supplied console's real Recoil registry atom and ID selector.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const bytes=fs.readFileSync(process.argv[2]),start=bytes.readUInt32LE(0x1c);
+const bytes=fs.readFileSync(process.argv[2]),start=bytes.readUInt32LE(0)===0xfb0bd1e5?0:bytes.readUInt32LE(0x1c);
 const count=bytes.readUInt32LE(start+4),base=12+8*count;
 assert.equal(bytes.readUInt32LE(start),0xfb0bd1e5);assert.equal(count,858);
 const definitions=new Map(),cache=new Map(),requested=[];

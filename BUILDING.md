@@ -1,4 +1,4 @@
-# Build App Title 0.2.13
+# Build App Title 0.2.14
 
 Requires Linux/POSIX, LLVM/Clang 18, LLD 18, make, Python 3 and PS5 Payload SDK **v0.41**.
 
@@ -13,7 +13,7 @@ export PS5_PAYLOAD_SDK=/absolute/path/ps5-payload-sdk
 make -j4
 ```
 
-The only file needed on the console is `dist/App_Title_v0.2.13.elf`.
+The only file needed on the console is `dist/App_Title_v0.2.14.elf`.
 The shared object in `build/` is automatically embedded into the controller.
 No Actions job or external repository mutation is needed to build.
 
@@ -134,45 +134,63 @@ Independent JavaScript/geometry/layout checks for the compact fixture:
 node tools/verify_ram_bundle.js build-host/ram_variant_input.bin ram_variant_style_
 ```
 
-The private controller/shared status ABI remains 112 bytes in 0.2.13.
+The private controller/shared status ABI remains 112 bytes in 0.2.14.
 Both pieces must be built together. Bounded startup metadata includes the
 refused module ID and size; no automatic source dump is saved. Fully reboot
 to clear an old resident component before loading a new version.
 
-## Live component regression (0.2.13)
+## Live component regression (0.2.14)
 
-The RAM test also creates a second compact fixture: 110 debug filename
-literals are shortened by five bytes each and ten unrelated function arguments
-lose redundant parentheses. It has the observed 1,385,934-byte payload,
-1,389,168-byte buffer and 5,271-byte Space module (527). Tile's synthetic length
-is 1,943 bytes; the console has not yet reported its actual length or source.
-This construction models the failure parameters and does not claim to capture
-the console's actual source differences.
+Outside mode keeps exact digests for modules 25, 102, 219 and 531. Modules
+527 and 552 use bounded source edits in `src/ram_js.hpp`: the module wrapper,
+require binding, style imports and actual React element/property structure
+must agree. Unique Space styling is reordered; the existing conditional Text
+is moved from the image mat into a positive-height View. Original image props,
+callbacks and expressions are copied rather than rebuilt with fixed names.
+Only literal debug source metadata is omitted from the reconstructed nodes.
+All six changes are staged before any live RAM byte is written. Inside mode
+still qualifies/edits only 219 after startup/table checks.
 
-Outside mode checks exact source digests for 25, 102, 219 and 531. Module 527
-requires its wrapper and one unique style-property context outside a quoted
-string/comment, then changes only the order of two existing array elements.
-Module 552 requires an exact canonical digest: only its build filename, five
-debug line numbers and redundant outer function parentheses are normalized.
-The live source is not normalized. Every staged write uses its actual slot
-length, with Space capped at 8 KiB and Tile at 4 KiB. Inside mode qualifies and
-edits only module 219 after the common startup/table validation.
-
-Seventy-two additional envelope/raw cases cover compact and growing target
-slots, debug line values and optional parentheses. Missing/ambiguous/non-code
-Space contexts, excessive slot sizes and executable Tile changes must refuse
-without any live mutation. The Space source is restored by undoing its one
-reorder and compared byte for byte, covering launch and focus handlers too.
-
-Run execution/layout checks for the three generated context fixtures:
+The extended suite covers 96 envelope/raw cases with shorter or longer slots,
+renamed React/native/style bindings, unrelated arithmetic, and extra image
+props/callbacks. It refuses duplicate/missing targets, fake calls inside strings
+or regexps, wrong imports/styles/gates and excessive capacities without writing.
+The reference outputs in all twelve modes remain byte-identical to the prior
+baseline. Space launch/focus bytes are checked by undoing only the style reorder.
 
 ```sh
 node tools/verify_ram_bundle.js build-host/ram_context_input_0.bin ram_context_0_style_
 node tools/verify_ram_bundle.js build-host/ram_context_input_1.bin ram_context_1_style_
 node tools/verify_ram_bundle.js build-host/ram_context_input_2.bin ram_context_2_style_
+node tools/verify_ram_bundle.js build-host/ram_context_input_3.bin ram_context_3_style_
 node tools/verify_ram_registry.js /private/path/HomeUI_decrypted.bin
 ```
 
-The registry check executes actual modules 554/555 and their transpiler helpers,
-with Recoil constructors and native Registry API mocked; it verifies the exact
-isHomeTitleIdDisplayEnabled key, boolean/integer/null values and errors.
+The registry test executes actual modules 554/555 and their async helpers with
+native Registry/Recoil factories mocked. Neither these checks nor Yoga geometry
+are native-console display confirmation.
+
+## Manual live RAM export and result logs
+
+On enabled RAM sessions, the existing manual settings action sends a 24-byte
+PID/serial-scoped request to the native component. The native file worker
+allocates at most 4 MiB and queues a managed home refresh. After table/startup
+validation, before any source edit, the hook copies RAM into the armed buffer.
+It does no allocation, file IO or Mono work. The native worker writes
+`/data/AppTitle/HomeUI_live.bin` and frees the buffer on success or timeout.
+The controller polls completion without blocking its session loop. Outside
+this explicit action the observer does not allocate/copy/write a dump.
+
+Legacy/non-RAM export retains `HomeUI_decrypted.bin`. The API reports the actual
+export path. Raw RAM exports are supported by both JS verification tools. With
+a local 4.03 fixture, `make shellui-test HOME_UI=/private/path/HomeUI_decrypted.bin`
+also checks that the full exported RAM equals the unmodified input, tests the
+request/timeout path and leaves a private `build-host/ram_live_input.bin` for:
+
+```sh
+node tools/verify_ram_bundle.js build-host/ram_live_input.bin ram_context_0_style_
+```
+
+`AppTitle.log` replaces its final HomeUI row at startup and after a user save;
+`AppTitle_shellui.log` replaces its bounded result when requested settings or
+validation outcome changes. Neither text file is periodically rewritten.
