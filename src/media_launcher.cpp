@@ -123,6 +123,20 @@ template<class Fn> Fn symbol(std::uint32_t handle,const char* name) {
     return valid?reinterpret_cast<Fn>(static_cast<std::uintptr_t>(at)):nullptr;
 }
 
+struct ServiceSession {
+    const char* name;
+    int (*terminate)()=nullptr;
+    bool owned=false;
+    bool close() {
+        if(!owned)return true;
+        owned=false;
+        const int rc=terminate();
+        log_fmt("media.%s_terminate.end rc=0x%x",name,rc);
+        return rc==0;
+    }
+    ~ServiceSession(){close();}
+};
+
 bool module(const char* name,const char* path,unsigned id,std::uint32_t& handle) {
     handle=0;
     log_fmt("media.module.lookup.begin name=%s",name);
@@ -170,40 +184,47 @@ bool ensure_media_launcher(std::uint32_t sdk_version) {
     log_fmt("media.assets.end staged=%d errno=%d",staged?1:0,staged?0:errno);
     if(!staged)return true;
 
+    ServiceSession user_session{"user"};
     std::uint32_t user=0;
     if(module("libSceUserService.sprx","/system/common/lib/libSceUserService.sprx",0x80000011U,user)) {
         using UserInit=int(*)(const void*);
         const auto user_init=symbol<UserInit>(user,"sceUserServiceInitialize");
-        if(user_init) {
+        user_session.terminate=symbol<int(*)()>(user,"sceUserServiceTerminate");
+        if(user_init&&user_session.terminate) {
             log_line("media.user_initialize.begin");
             const int user_rc=user_init(nullptr);
+            user_session.owned=user_rc==0;
             log_fmt("media.user_initialize.end rc=0x%x",user_rc);
         }
     }
     std::uint32_t installer=0;
     if(!module("libSceAppInstUtil.sprx","/system/common/lib/libSceAppInstUtil.sprx",0x80000014U,installer)) {
         log_line("media.installer.unavailable; continuing without Media registration");
-        return true;
+        return user_session.close();
     }
     using Init = int (*)();
     using Exists = int (*)(const char*, int*);
     using Install = int (*)(const char*, const char*, void*);
     const auto init=symbol<Init>(installer,"sceAppInstUtilInitialize");
+    const auto terminate=symbol<Init>(installer,"sceAppInstUtilTerminate");
     const auto exists=symbol<Exists>(installer,"sceAppInstUtilAppExists");
     const auto install=symbol<Install>(installer,"sceAppInstUtilAppInstallTitleDir");
-    if (!init || !exists || !install) {
+    if (!init || !terminate || !exists || !install) {
         log_line( "Media launcher unavailable: AppInstUtil symbols missing");
-        return true;
+        return user_session.close();
     }
     // UserService precedes AppInstUtil as in SM+. AppInstUtil initialization
     // keeps the installer identity window used by the Common FPS baseline.
+    // The matching Terminate must complete inside that same identity window;
+    // no installer session is needed by the resident settings/ID workers.
+    ServiceSession installer_session{"installer",terminate};
     int init_rc=-1;
     log_line("media.credentials.snapshot.begin");
     const auto original = kernel_get_ucred_authid(getpid());
     log_fmt("media.credentials.snapshot.end valid=%d",original!=0&&original!=static_cast<std::uint64_t>(-1)?1:0);
     if (original == 0 || original == static_cast<std::uint64_t>(-1)) {
         log_line( "Media launcher skipped: cannot snapshot credentials");
-        return true;
+        return user_session.close();
     }
     int check_rc = -1, install_rc = -1, present = 0;
     log_line("media.credentials.enter.begin");
@@ -212,6 +233,7 @@ bool ensure_media_launcher(std::uint32_t sdk_version) {
         log_line("media.credentials.enter.end verified=1");
         log_line("media.initialize.begin");
         init_rc=init();
+        installer_session.owned=init_rc==0;
         log_fmt("media.initialize.end rc=0x%x",init_rc);
         if (init_rc == 0) {
             log_line("media.exists.begin");
@@ -231,16 +253,20 @@ bool ensure_media_launcher(std::uint32_t sdk_version) {
     } else {
         log_line("media.credentials.enter.end verified=0");
     }
+    // Close only sessions this call successfully initialized. In particular,
+    // never terminate a service whose Initialize reported already initialized.
+    const bool installer_released=installer_session.close();
     // Credential changes never overlap sampler work or the HTTP thread.
     log_line("media.credentials.restore.begin");
     const bool restored = kernel_set_ucred_authid(getpid(), original) == 0 &&
         kernel_get_ucred_authid(getpid()) == original;
+    const bool user_released=user_session.close();
     char record[256]{};
     std::snprintf(record, sizeof(record),
         "Media launcher title=%s init=0x%x check=0x%x staged=%d install=0x%x present=%d auth_restored=%d",
         kTitleId, init_rc, check_rc, staged ? 1 : 0, install_rc, present, restored ? 1 : 0);
     log_line(record);
-    log_fmt("media.result present=%d auth_restored=%d",present,restored?1:0);
-    return restored;
+    log_fmt("media.result present=%d auth_restored=%d sessions_closed=%d",present,restored?1:0,installer_released&&user_released?1:0);
+    return restored&&installer_released&&user_released;
 }
 } // namespace app_title::ps5

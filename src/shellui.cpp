@@ -3,7 +3,9 @@
 // GPL-3.0-or-later reference: etaHEN / LightningMods, 2025.
 #include "app_title.hpp"
 #include "home_style.hpp"
+#include "live_ram_export.hpp"
 #include <atomic>
+#include <cerrno>
 #include <cstdio>
 #include <cstring>
 #include <unistd.h>
@@ -15,6 +17,7 @@ int sceRegMgrGetInt(long,int*);
 int ioctl(int,unsigned long,...);
 MonoDomain* mono_get_root_domain();
 MonoThread* mono_thread_attach(MonoDomain*);
+void mono_thread_detach(MonoThread*);
 MonoAssembly* mono_domain_assembly_open(MonoDomain*,const char*);
 MonoImage* mono_assembly_get_image(MonoAssembly*);
 MonoClass* mono_class_from_name(MonoImage*,const char*,const char*);
@@ -42,7 +45,19 @@ std::atomic<std::uint32_t> style_config{0xffffff},applied_config{0xffffff};
 std::atomic<app_title::StyleState> style_state{app_title::StyleState::idle};
 std::atomic_bool style_hook_ready{false};
 std::atomic<unsigned long long> style_patches{0};
+std::atomic<std::uint32_t> style_input_words[8]{};
+void remember_input(const app_title::StyleInput& input) {
+    std::uint32_t words[8];static_assert(sizeof(words)==sizeof(input));
+    std::memcpy(words,&input,sizeof(words));
+    for(unsigned i=0;i<8;++i)style_input_words[i].store(words[i],std::memory_order_relaxed);
+}
+app_title::StyleInput observed_input() {
+    std::uint32_t words[8];for(unsigned i=0;i<8;++i)words[i]=style_input_words[i].load(std::memory_order_relaxed);
+    app_title::StyleInput input{};std::memcpy(&input,words,sizeof(words));return input;
+}
 MonoDomain* root_domain=nullptr;MonoMethod* reload_method=nullptr;
+app_title::LiveRamExport live_export{};
+void capture_ram_source(const void* data,std::size_t size){live_export.capture(data,size);}
 #define TRAMP(name) extern "C" __attribute__((naked,noinline,used,aligned(16))) void name(){__asm__ volatile(".rept 256\n nop\n .endr\n ret\n");}
 TRAMP(registry_trampoline)
 TRAMP(update_trampoline)
@@ -66,12 +81,15 @@ int registry_get(long key,int* out,Registry original) {
 int registry_hook(long key,int* out){return registry_get(key,out,reinterpret_cast<Registry>(&registry_trampoline));}
 int ioctl_get(int fd,unsigned long command,void* argument,Ioctl original) {
     const int result=original(fd,command,argument);
+    const int original_errno=errno;
     if(result==0&&command==0xc0105203UL&&argument&&enabled.load(std::memory_order_acquire)&&style_hook_ready.load(std::memory_order_acquire)) {
         const auto* args=static_cast<const RnpsArgs*>(argument);
         if(args->error==0&&args->buffer&&args->size>0) {
             const auto packed=style_config.load(std::memory_order_acquire);
             app_title::Config config{};config.top=(packed&0x1000000u)!=0;config.outside=(packed&0x2000000u)!=0;config.color=packed&0xffffffu;
-            const auto patched=app_title::patch_home_style(args->buffer,static_cast<std::size_t>(args->size),config);
+            app_title::StyleInput input{};
+            const auto patched=app_title::patch_home_style(args->buffer,static_cast<std::size_t>(args->size),config,&input);
+            if(patched!=app_title::HomeStyleResult::ignored)remember_input(input);
             if(patched==app_title::HomeStyleResult::applied) {
                 applied_config.store(packed,std::memory_order_relaxed);style_patches.fetch_add(1,std::memory_order_relaxed);
                 style_state.store(app_title::StyleState::applied,std::memory_order_release);
@@ -79,12 +97,14 @@ int ioctl_get(int fd,unsigned long command,void* argument,Ioctl original) {
             else if(patched==app_title::HomeStyleResult::invalid)style_state.store(app_title::StyleState::invalid,std::memory_order_release);
         }
     }
+    errno=original_errno;
     return result;
 }
 int ioctl_hook(int fd,unsigned long command,void* argument){return ioctl_get(fd,command,argument,reinterpret_cast<Ioctl>(&ioctl_trampoline));}
 void run_update(MonoObject* instance,Update original) {
     original(instance);
     if(!reload_pending.load(std::memory_order_acquire)||reloading.test_and_set(std::memory_order_acquire))return;
+    const int original_errno=errno;
     // Consume before invocation: a scene reload may re-enter an Update callback.
     if(reload_pending.exchange(false,std::memory_order_acq_rel)) {
         MonoString* name=root_domain?mono_string_new(root_domain,"NPXS40002"):nullptr;
@@ -101,6 +121,7 @@ void run_update(MonoObject* instance,Update original) {
         if(handle)mono_gchandle_free(handle);
     }
     reloading.clear(std::memory_order_release);
+    errno=original_errno;
 }
 void update_hook(MonoObject* instance){run_update(instance,reinterpret_cast<Update>(&update_trampoline));}
 void activation(bool valid,const app_title::Config& config,unsigned hooks) {
@@ -112,6 +133,7 @@ void activation(bool valid,const app_title::Config& config,unsigned hooks) {
     if(valid&&(!seen||previous!=config.enabled||previous_style!=packed||previous_hooks!=hooks)) {
         previous=config.enabled;previous_style=packed;previous_hooks=hooks;seen=true;stage.store(6,std::memory_order_relaxed);
         style_state.store(!config.enabled?app_title::StyleState::idle:hooks==app_title::kHooks?app_title::StyleState::waiting:app_title::StyleState::unavailable,std::memory_order_release);
+        remember_input({});
         reload_pending.store(true,std::memory_order_release);
     }
 }
@@ -132,7 +154,14 @@ bool signature(MonoMethod* method,bool takes_string) {
 bool prepare_request(app_title::Request& r) {
     root_domain=mono_get_root_domain();
     if(!root_domain){stage.store(100);return false;}
-    if(!mono_thread_attach(root_domain)){stage.store(101);return false;}
+    // This is our own native pthread, not an existing managed UI thread.
+    // Metadata/JIT preparation is its only Mono work. Do not leave this
+    // polling/sleeping thread registered with the GC for the entire session.
+    struct Attachment {
+        MonoThread* thread;
+        ~Attachment(){if(thread)mono_thread_detach(thread);}
+    } attachment{mono_thread_attach(root_domain)};
+    if(!attachment.thread){stage.store(101);return false;}
     auto* react=image("/system_ex/common_ex/lib/ReactNative.Vsh.Common.dll");
     if(!react){stage.store(102);return false;}
     auto* manager=mono_class_from_name(react,"ReactNative.Vsh.Common","ReactApplicationSceneManager");
@@ -158,19 +187,21 @@ app_title::RuntimeStatus snapshot() {
     s.reloads=reloads.load();s.reload_errors=reload_errors.load();s.stage=stage.load();
     s.style_state=static_cast<std::uint32_t>(style_state.load(std::memory_order_acquire));
     const auto applied=applied_config.load(std::memory_order_relaxed);s.style_color=applied&0xffffffu;s.style_top=(applied>>24)&3;
-    s.style_patches=style_patches.load();return s;
+    s.style_patches=style_patches.load();s.style_input=observed_input();return s;
 }
 void write_diagnostics(const app_title::RuntimeStatus& s,const char* path) {
-    char text[512];const int n=std::snprintf(text,sizeof(text),
-        "App Title v%s native-titleid pid=%d enabled=%u stage=%u\nkey=0x7802c916 home=NPXS40002\nregistry_calls=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu\nstyle_state=%u patches=%llu applied_position=%s applied_color=%06x applied_placement=%s\n",
-        app_title::kVersion,s.pid,s.enabled,s.stage,static_cast<unsigned long long>(s.registry_calls),static_cast<unsigned long long>(s.title_queries),static_cast<unsigned long long>(s.overrides),static_cast<unsigned long long>(s.reloads),static_cast<unsigned long long>(s.reload_errors),s.style_state,static_cast<unsigned long long>(s.style_patches),(s.style_top&1)?"top":"bottom",s.style_color,(s.style_top&2)?"outside":"inside");
+    const auto requested=style_config.load(std::memory_order_acquire);
+    char text[768];const int n=std::snprintf(text,sizeof(text),
+        "App Title v%s native-titleid pid=%d enabled=%u stage=%u\nkey=0x7802c916 home=NPXS40002\nregistry_calls=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu\nstyle_state=%u patches=%llu applied_position=%s applied_color=%06x applied_placement=%s\ninput_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u failed_module=%u module_size=%u\nrequested_position=%s requested_color=%06x requested_placement=%s\n",
+        app_title::kVersion,s.pid,s.enabled,s.stage,static_cast<unsigned long long>(s.registry_calls),static_cast<unsigned long long>(s.title_queries),static_cast<unsigned long long>(s.overrides),static_cast<unsigned long long>(s.reloads),static_cast<unsigned long long>(s.reload_errors),s.style_state,static_cast<unsigned long long>(s.style_patches),(s.style_top&1)?"top":"bottom",s.style_color,(s.style_top&2)?"outside":"inside",s.style_input.format,s.style_input.buffer_size,s.style_input.payload_size,s.style_input.modules,s.style_input.startup_size,s.style_input.failure,s.style_input.failed_module,s.style_input.module_size,(requested&0x1000000u)?"top":"bottom",requested&0xffffffu,(requested&0x2000000u)?"outside":"inside");
     if(n>0&&static_cast<std::size_t>(n)<sizeof(text))(void)app_title::atomic_file(path,text,static_cast<std::size_t>(n));
 }
 struct RuntimePublisher {
     app_title::RuntimeStatus previous{};bool have=false,diagnostic_written=false,style_diagnostic_written=false;unsigned elapsed=10;
+    app_title::RuntimeStatus style_previous{};std::uint32_t previous_requested=0xffffffffu;
     void update(const app_title::RuntimeStatus& s,const char* status_path=app_title::kStatus,const char* diagnostic_path="/data/AppTitle/AppTitle_shellui.log") {
         ++elapsed;
-        const bool urgent=!have||s.enabled!=previous.enabled||s.stage!=previous.stage||s.style_state!=previous.style_state||s.style_patches!=previous.style_patches;
+        const bool urgent=!have||s.enabled!=previous.enabled||s.stage!=previous.stage||s.style_state!=previous.style_state||s.style_patches!=previous.style_patches||std::memcmp(&s.style_input,&previous.style_input,sizeof(s.style_input));
         const bool changed=s.title_queries!=previous.title_queries||s.overrides!=previous.overrides||s.reloads!=previous.reloads||s.reload_errors!=previous.reload_errors;
         if(urgent||(changed&&elapsed>=10)) {
             if(app_title::atomic_file(status_path,&s,sizeof(s))){previous=s;have=true;}
@@ -179,24 +210,32 @@ struct RuntimePublisher {
         if(!diagnostic_written&&(s.stage>=100||s.reloads||s.reload_errors)) {
             write_diagnostics(s,diagnostic_path);diagnostic_written=true;
         }
-        if(!style_diagnostic_written&&s.style_state>=static_cast<unsigned>(app_title::StyleState::applied)) {
-            write_diagnostics(s,diagnostic_path);style_diagnostic_written=true;
+        const auto requested=style_config.load(std::memory_order_acquire);
+        if(s.style_state<static_cast<unsigned>(app_title::StyleState::applied))style_diagnostic_written=false;
+        if(s.style_state>=static_cast<unsigned>(app_title::StyleState::applied)&&(!style_diagnostic_written||requested!=previous_requested||
+           s.style_state!=style_previous.style_state||std::memcmp(&s.style_input,&style_previous.style_input,sizeof(s.style_input)))) {
+            write_diagnostics(s,diagnostic_path);style_diagnostic_written=true;previous_requested=requested;style_previous=s;
         }
     }
 };
 }
 extern "C" __attribute__((noreturn,visibility("default"))) void* elf_main(void*) {
+    app_title::set_ram_source_observer(capture_ram_source);
     RuntimePublisher publisher{};publisher.update(snapshot());
     app_title::Request request{};const bool ready=prepare_request(request);
     if(ready&&!app_title::atomic_file(app_title::kRequest,&request,sizeof(request)))stage.store(107);
     publisher.update(snapshot());
-    // The injected thread remains resident even if bootstrap was refused.
+    // Bootstrap detaches from Mono on success and on every failure path.
+    // Only this native file/status worker remains; managed operations run
+    // exclusively in the already-managed Application.Update callback.
     for(;;) {
         int pid=0,on=0,top=0;unsigned color=0xffffff,hooks=0;char extra=0;bool valid=false;
         if(ready)if(FILE* f=fopen(app_title::kActive,"r")) {
             valid=fscanf(f,"%d %d %d %x %u %c",&pid,&on,&top,&color,&hooks,&extra)==5&&pid==getpid()&&(on==0||on==1)&&top>=0&&top<=3&&color<=0xffffff&&(hooks==app_title::kRequiredHooks||hooks==app_title::kHooks);fclose(f);
         }
         app_title::Config config{};config.enabled=on==1;config.top=(top&1)!=0;config.outside=(top&2)!=0;config.color=color;
-        activation(valid,config,hooks);publisher.update(snapshot());usleep(500000);
+        activation(valid,config,hooks);publisher.update(snapshot());
+        if(live_export.poll(valid&&config.enabled&&hooks==app_title::kHooks&&observed_input().format==2))reload_pending.store(true,std::memory_order_release);
+        usleep(500000);
     }
 }

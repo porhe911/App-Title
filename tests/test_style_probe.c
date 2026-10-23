@@ -18,7 +18,8 @@ static decrypt_result mock_decrypt(void* bytes,int size) {
     if(mode==2)return (decrypt_result){.ioctl_rc=0,.device_error=0x800f1213u};
     if(mode!=3) {
         unsigned char* p=bytes;p[63]^=0x33;
-        if(mode!=4){memcpy(p+128,magic,8);put32(p+136,89);}
+        if(mode==5){put32(p+256,0xfb0bd1e5u);put32(p+260,2);put32(p+264,8);}
+        else if(mode!=4){memcpy(p+128,magic,8);put32(p+136,89);}
     }
     return (decrypt_result){0};
 }
@@ -63,6 +64,10 @@ int main(int argc,char** argv) {
     assert(style_probe("build-host/style/input.bundle","build-host/style/output.bin","build-host/style/probe.log",0x11600005,mock_decrypt)==0);
     read_report(report,sizeof(report));assert(strstr(report,"saved.format_pending_analysis")&&strstr(report,"hermes_offset=-1"));
     unlink("build-host/style/output.bin");
+    mode=5;
+    assert(style_probe("build-host/style/input.bundle","build-host/style/output.bin","build-host/style/probe.log",0x04030000,mock_decrypt)==0);
+    read_report(report,sizeof(report));assert(strstr(report,"saved.ram_bundle_detected")&&strstr(report,"ram_modules=2 ram_startup_size=8"));
+    unlink("build-host/style/output.bin");
     const int expected_calls=calls;
     for(unsigned field=0;field<3;++field) {
         unsigned char bad[4096];memcpy(bad,image,sizeof(bad));
@@ -99,3 +104,4 @@ int main(int argc,char** argv) {
     unlink("build-host/style/probe.log");unlink("build-host/style/input.bundle");
     puts("PASS: tail-preserving RNPS bounds, observed 11.60 header regression, validation/device failures, bounded report, unchanged/source protection and output errors");
 }
+

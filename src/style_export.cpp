@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "app_title.hpp"
 #include "style_probe.h"
+#include "live_ram_export.hpp"
 #include <atomic>
 #include <cerrno>
 #include <fcntl.h>
@@ -16,6 +17,7 @@ namespace {
 // The HTTP thread only queues. Device I/O runs on the controller thread,
 // sequentially with installer/ptrace credential changes and hook setup.
 std::atomic<unsigned> state{0};
+std::atomic_bool live_path{false};LiveExportClient live_client{};
 struct Args {void* data;int size;std::uint32_t error;};
 static_assert(sizeof(Args)==16&&offsetof(Args,size)==8&&offsetof(Args,error)==12);
 #ifndef APP_TITLE_HOST_TEST
@@ -33,6 +35,7 @@ const char* style_export_state() {
     constexpr const char* names[]={"idle","queued","running","saved","failed"};
     return names[state.load(std::memory_order_acquire)];
 }
+const char* style_export_path(){return live_path.load(std::memory_order_acquire)?kLiveExportFile:"/data/AppTitle/HomeUI_decrypted.bin";}
 bool request_style_export() {
     auto previous=state.load(std::memory_order_acquire);
     do {if(previous==1||previous==2)return false;}
@@ -40,10 +43,23 @@ bool request_style_export() {
     return true;
 }
 void run_style_export() {
+    if(live_client.pending) {
+        const int result=live_client.poll();
+        if(result)state.store(result>0?3:4,std::memory_order_release);
+        return;
+    }
     unsigned queued=1;if(!state.compare_exchange_strong(queued,2,std::memory_order_acq_rel))return;
 #ifdef APP_TITLE_HOST_TEST
     state.store(4,std::memory_order_release); // No PS5 device access in HTTP tests.
 #else
+    int pid=0;if(FILE* f=fopen(kActive,"r")){(void)fscanf(f,"%d",&pid);fclose(f);}
+    RuntimeStatus status{};
+    if(load_runtime_status(pid,status)&&status.enabled&&status.style_input.format==2) {
+        live_path.store(true,std::memory_order_release);
+        if(!live_client.begin(pid))state.store(4,std::memory_order_release);
+        return;
+    }
+    live_path.store(false,std::memory_order_release);
     const char* input="/system_ex/rnps/apps/NPXS40002/application.ps.bundle";
     if(access(input,F_OK)<0&&errno==ENOENT)input="/mnt/rnps/apps/NPXS40002/application.ps.bundle";
     const int rc=style_probe(input,"/data/AppTitle/HomeUI_decrypted.bin",

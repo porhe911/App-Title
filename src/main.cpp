@@ -41,13 +41,13 @@ static void runtime_phase(const Config& config,Stats& stats) {
     RuntimeStatus s{};
     const bool ready=load_runtime_status(stats.shell_pid,s);
     if(ready){stats.queries=s.title_queries;stats.overrides=s.overrides;stats.reloads=s.reloads;stats.reload_errors=s.reload_errors;
-        stats.style_state=s.style_state;stats.style_color=s.style_color;stats.style_top=s.style_top&1;stats.style_outside=(s.style_top>>1)&1;stats.style_patches=s.style_patches;}
+        stats.style_state=s.style_state;stats.style_color=s.style_color;stats.style_top=s.style_top&1;stats.style_outside=(s.style_top>>1)&1;stats.style_patches=s.style_patches;stats.style_input=s.style_input;}
     if(ready&&s.reload_errors)stats.phase="Home reload failed; see AppTitle_shellui.log";
     else if(!config.enabled)stats.phase="Disabled";
     else if(ready&&s.style_state==static_cast<unsigned>(StyleState::applied))stats.phase="Title ID style applied";
-    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::unsupported))stats.phase="Title IDs active; this HomeUI style is unsupported";
-    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::invalid))stats.phase="Title IDs active; HomeUI style validation failed";
-    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::unavailable))stats.phase="Title IDs active; style callback unavailable";
+    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::unsupported))stats.phase="HomeUI style unsupported; ID rendering not confirmed";
+    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::invalid))stats.phase="HomeUI validation failed; ID rendering not confirmed";
+    else if(ready&&s.style_state==static_cast<unsigned>(StyleState::unavailable))stats.phase="Style callback unavailable; ID rendering not confirmed";
     else if(ready&&s.overrides&&s.reloads)stats.phase="Native title ID override active; refresh requested";
     else stats.phase="Native hooks ready; waiting for home refresh";
 }
@@ -59,21 +59,21 @@ static void notify(const char* message) {
 }
 int main() {
     using namespace app_title;
-    if(!prepare_data_directory()){notify("App_Title 0.2.8: cannot create /data/AppTitle.");return 1;}
+    if(!prepare_data_directory()){notify("App Title 0.2.15: cannot create /data/AppTitle.");return 1;}
     record_launch("main.enter",0);
     // A held advisory lock prevents duplicate autoload workers, including after a shell restart.
     const int lock=open("/system_tmp/app_title.lock",O_CREAT|O_RDWR|O_NOFOLLOW,0600);
-    if(lock<0){const int error=errno;record_launch("lock.open_failed",error);notify("App_Title 0.2.8: cannot open its lock. See AppTitle_launch.log.");return 1;}
+    if(lock<0){const int error=errno;record_launch("lock.open_failed",error);notify("App Title 0.2.15: cannot open its lock. See AppTitle_launch.log.");return 1;}
     if(flock(lock,LOCK_EX|LOCK_NB)!=0) {
         const int error=errno;record_launch("lock.acquire_failed",error);close(lock);
-        notify("App_Title 0.2.8: lock unavailable; another instance may be running. See AppTitle_launch.log.");return 1;
+        notify("App Title 0.2.15: lock unavailable; another instance may be running. See AppTitle_launch.log.");return 1;
     }
     reset_log();
     log_fmt("App Title v%s EXPERIMENTAL",kVersion);
     log_line("stage=main.enter lock=acquired");
     record_launch("lock.ready",0);
-    (void)sceKernelSetProcessName("App_Title.elf");
-    (void)syscall(SYS_thr_set_name,-1,"App_Title.elf");
+    (void)sceKernelSetProcessName("App Title");
+    (void)syscall(SYS_thr_set_name,-1,"App Title");
     log_fmt("fw=0x%08x",kernel_get_fw_version());
     log_line("stage=config.begin");
     Config config{};
@@ -87,8 +87,8 @@ int main() {
     record_launch("media.begin",0);
     log_line("stage=media.begin");
     if(!app_title::ps5::ensure_media_launcher(kernel_get_fw_version())) {
-        record_launch("media.credentials_failed",-1);log_line("Credential restoration failed; stopping");
-        notify("App_Title 0.2.8: Media setup failed. See AppTitle.log.");return 1;
+        record_launch("media.cleanup_failed",-1);log_line("Media service cleanup or credential restoration failed; stopping");
+        notify("App Title 0.2.15: Media setup failed. See AppTitle.log.");return 1;
     }
     log_line("stage=media.end");
     record_launch("settings.begin",0);
@@ -96,13 +96,14 @@ int main() {
     const bool settings_ready=start_settings(config,stats);
     log_fmt("stage=settings.end ready=%d",settings_ready?1:0);
     record_launch(settings_ready?"settings.ready":"settings.failed",settings_ready?0:-1);
-    if(!settings_ready)notify("App_Title 0.2.8: settings server unavailable. See AppTitle.log.");
-    else notify("App_Title 0.2.8: settings ready; initializing Title IDs.");
+    if(!settings_ready)notify("App Title 0.2.15: settings server unavailable. See AppTitle.log.");
+    else notify("App Title 0.2.15: settings ready; initializing Title IDs.");
     log_line("backend=native-titleid key=0x7802c916 PNG interception disabled");
     int previous=-1,stable=0;bool online=false,style_reported=false;unsigned style_wait=0;SessionGuard session{};
     log_line("stage=worker.loop");
     for(;;) {
         if(take_settings_change(config)) {
+            style_reported=false;style_wait=0;
             if(session.blocked){stats.phase="ShellUI restarted; App Title stopped until reboot";publish_status(stats);continue;}
             if(online){active(stats.shell_pid,config,stats.hooks);runtime_phase(config,stats);}
             else stats.phase="Waiting for compatible ShellUI";
@@ -111,7 +112,7 @@ int main() {
         if(pid>0 && pid!=previous) {
             previous=pid;stable=0;online=false;stats.hooks=0;stats.shell_pid=pid;
             stats.queries=stats.overrides=stats.reloads=stats.reload_errors=0;
-            stats.style_state=0;stats.style_patches=0;stats.style_color=0xffffff;stats.style_top=0;stats.style_outside=0;
+            stats.style_state=0;stats.style_patches=0;stats.style_color=0xffffff;stats.style_top=0;stats.style_outside=0;stats.style_input={};
             // Transient sysctl failures do not discard a live session. A new
             // positive PID starts the readiness gate again.
             if(session.observe(pid)) {
@@ -145,7 +146,7 @@ int main() {
                     }
                     if(received&&install_hooks(pid,req,stats.hooks)) {
                         online=true;active(pid,config,stats.hooks);runtime_phase(config,stats);
-                        notify("App Title: native Title ID display ready. Home refresh queued.");
+                        notify("App Title: hooks ready; refreshing home.");
                     } else {
                         stats.phase="Hook unavailable; see AppTitle.log";
                         RuntimeStatus diagnostic{};
@@ -159,12 +160,11 @@ int main() {
         }
         if(online) {
             runtime_phase(config,stats);
-            // One startup result, also available in the main log users send.
-            // log_error bypasses the closed startup log without reopening it;
-            // the once flag prevents any periodic text writes.
+            // One replaceable result at startup or after an explicit save.
+            // No text writes occur again until settings change.
             if(!style_reported)++style_wait;
             if(!style_reported&&(style_wait>=30||(style_wait>=8&&(!config.enabled||stats.style_state>=static_cast<unsigned>(StyleState::applied))))) {
-                log_error("HomeUI result renderer=rnps-reserved-space style_state=%u patches=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu requested=%s/%s/%06x applied=%s/%s/%06x",stats.style_state,static_cast<unsigned long long>(stats.style_patches),static_cast<unsigned long long>(stats.queries),static_cast<unsigned long long>(stats.overrides),static_cast<unsigned long long>(stats.reloads),static_cast<unsigned long long>(stats.reload_errors),config.outside?"outside":"inside",config.top?"top":"bottom",config.color,stats.style_outside?"outside":"inside",stats.style_top?"top":"bottom",stats.style_color);
+                log_home_result("HomeUI result renderer=rnps-reserved-space style_state=%u patches=%llu title_queries=%llu overrides=%llu reloads=%llu reload_errors=%llu requested=%s/%s/%06x applied=%s/%s/%06x input_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u failed_module=%u module_size=%u",stats.style_state,static_cast<unsigned long long>(stats.style_patches),static_cast<unsigned long long>(stats.queries),static_cast<unsigned long long>(stats.overrides),static_cast<unsigned long long>(stats.reloads),static_cast<unsigned long long>(stats.reload_errors),config.outside?"outside":"inside",config.top?"top":"bottom",config.color,stats.style_outside?"outside":"inside",stats.style_top?"top":"bottom",stats.style_color,stats.style_input.format,stats.style_input.buffer_size,stats.style_input.payload_size,stats.style_input.modules,stats.style_input.startup_size,stats.style_input.failure,stats.style_input.failed_module,stats.style_input.module_size);
                 style_reported=true;
             }
         }
@@ -172,3 +172,4 @@ int main() {
         publish_status(stats);usleep(1000000);
     }
 }
+

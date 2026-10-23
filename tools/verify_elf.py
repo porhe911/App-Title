@@ -24,7 +24,7 @@ def check(path,shared):
     assert 'libc.so.6' not in dynamic and 'GLIBC_' not in data.decode('latin1')
     if shared:assert '(PIE)' not in dynamic
     return data
-controller_path=ROOT/'dist/App_Title_v0.2.8.elf'
+controller_path=ROOT/'dist/App_Title_v0.2.15.elf'
 controller=check(controller_path,False)
 shared=check(ROOT/'build/App_Title_ShellUI.elf',True)
 def needed(path):
@@ -39,6 +39,8 @@ assert 'sceRegMgrGetInt' not in controller_symbols and 'mono_runtime_invoke' not
 assert shared in controller,'Controller does not embed the exact shared object'
 assert b'/data/AppTitle/AppTitle.log' in controller and b'/data/AppTitle/AppTitle_launch.log' in controller
 assert b'/data/AppTitle/AppTitle_shellui.log' in shared
+assert b'input_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u failed_module=%u module_size=%u' in controller
+assert b'input_format=%u buffer=%u payload=%u modules=%u startup=%u failure=%u failed_module=%u module_size=%u' in shared
 assert b'/data/AppTitle/AppTitle_Style_Probe.log' in controller
 assert b'/api/export' in controller and b'Settings HTTP worker entered' in controller
 assert b'/data/AppTitle.log\0' not in controller and b'/data/AppTitle_launch.log\0' not in controller
@@ -49,6 +51,8 @@ assert 'ioctl_trampoline' in shared_symbols and 'patch_home_style' in shared_sym
 assert 'sha1_digest' in shared_symbols and 'build_title_style' in shared_symbols
 assert 'open_trampoline' not in shared_symbols and 'stat_trampoline' not in shared_symbols
 assert 'sceRegMgrGetInt' in shared_symbols and 'mono_runtime_invoke' in shared_symbols
+assert 'mono_thread_attach' in shared_symbols and 'mono_thread_detach' in shared_symbols
+assert b'sceAppInstUtilTerminate' in controller and b'sceUserServiceTerminate' in controller
 assert bytes.fromhex('16c90278') in shared,'etaHEN title ID key missing'
 assert b'NPXS40002' in shared and b'ReloadApp' in shared
 symbols=subprocess.check_output(['objdump','-t',str(controller_path)],text=True)
@@ -56,3 +60,4 @@ addresses={line.split()[-1]:int(line.split()[0],16) for line in symbols.splitlin
 assert 0<addresses['apptitle_stable_stager_end']-addresses['apptitle_stable_stager']<1024
 assert 'stbi_load' not in symbols,'PNG renderer linked into native controller'
 print('PASS: minimal controller dependencies, RegMgr/Mono confined to shared object, native IDs, bounded HomeUI style module and exact embedding')
+

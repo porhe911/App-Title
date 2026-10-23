@@ -69,5 +69,57 @@
     "version": "2.0.1",
     "repository": "facebook/yoga",
     "scope": "external host layout check; not linked into payload"
+  },
+  "native_home_ram_style": {
+    "format": "React Native Indexed RAM bundle, magic 0xfb0bd1e5",
+    "home_application": "rnps-home_v2_ppr_releases_04.00",
+    "observed_firmware": "4.03",
+    "module_count": 858,
+    "startup_size": 1795,
+    "payload_size": 1386504,
+    "input_sha256": "6db944372cfe8b7d50328ed4bd47c8cae6917821fb30f20004e7f85c673fe00a",
+    "payload_sha1": "1f57578fcf36d2c85281c142d76e39fc69c01fa8",
+    "patched_modules_outside": [
+      25,
+      102,
+      219,
+      527,
+      531,
+      552
+    ],
+    "patched_modules_inside": [
+      219
+    ],
+    "scope": "Exact startup/table and 25/102/219/531 digests; 527/552 use bounded React-call, import and property guards with real live bindings. Preserve original image props, visibility and text expression. All writes staged in actual slots; inside edits 219 only.",
+    "validation": "User confirmed inside/bottom/white display on 4.03 in 0.2.13. Outside 0.2.14 passes host structure/execution/layout cases; console confirmation pending. Latest provided startup log describes inside mode, not the later outside failure.",
+    "transport": "RNPS envelope or raw payload; ordered non-overlapping source entries and bounded trailing alignment; source addresses resolved from the live table.",
+    "startup_sha1": "67a129582f323eee0448924a0d7523e03259287b",
+    "observed_live_payload_size": 1385934,
+    "observed_live_buffer_size": 1389168,
+    "observed_live_module_527_size": 5271,
+    "manual_diagnostics": "Explicit request only: capture validated raw RAM before our edits on a forced home refresh; 4 MiB allocation cap, worker-owned file IO, success/timeout cleanup. No automatic dump."
+  },
+  "native_home_style_1360": {
+    "repository": "estate737/App-Title",
+    "pull_request": "https://github.com/porhe911/App-Title/pull/3",
+    "commit": "613df61a39ecc8cf0f57df00ff63aad8646d2c6a",
+    "observed_firmware": "13.600.007",
+    "home_application": "rnps-home 13.0.0+22834",
+    "hermes_version": 89,
+    "payload_size": 1795460,
+    "function_count": 9727,
+    "source_hash": "80837fe66ccb00ba923f279c90b78c7c4813e543",
+    "bytecode_sha1": "8cae100a46561442979d1c4e073267515306d12a",
+    "patched_functions": [
+      1473,
+      6703,
+      6549,
+      6545,
+      282,
+      6484,
+      1079
+    ],
+    "validation": "Console success reported by estate737 for PR #3. Combined 0.2.15 console verification and an independently checked complete 13.60 fixture are pending. Both generators are exercised without firmware files.",
+    "media": "No new Media registration on firmware 12+; configure over FTP before launch."
   }
 }
