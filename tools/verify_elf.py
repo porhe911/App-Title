@@ -24,7 +24,7 @@ def check(path,shared):
     assert 'libc.so.6' not in dynamic and 'GLIBC_' not in data.decode('latin1')
     if shared:assert '(PIE)' not in dynamic
     return data
-controller_path=ROOT/'dist/App_Title_v0.2.14.elf'
+controller_path=ROOT/'dist/App_Title_v0.2.15.elf'
 controller=check(controller_path,False)
 shared=check(ROOT/'build/App_Title_ShellUI.elf',True)
 def needed(path):

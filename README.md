@@ -2,7 +2,7 @@
 
 Standalone PS5 ELF payload that displays game and application title IDs on the home screen, with a persistent settings shortcut in **Media**.
 
-**0.2.14 test build:** inside/bottom/white IDs on 4.03 are confirmed by the user's 0.2.13 screenshots and startup log. Outside mode now reparents the existing Text node using the live React/native/style bindings and retains image properties and callbacks. Last-save diagnostics and explicit live RAM export are included. The updated outside mode still needs a console check.
+**0.2.15 integration test build:** combines the 4.03 fixes through 0.2.14 with estate737's exact 13.60 profile from [PR #3](https://github.com/porhe911/App-Title/pull/3). Keeps resource cleanup, bounded logs, live RAM export and all settings. The combined ELF still needs console checks; the 4.03 outside renderer is unchanged from the pending 0.2.14 candidate.
 
 [Download v0.2.8](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) · [Русский README](README_RU.md) · [Build instructions](BUILDING.md)
 
@@ -30,20 +30,23 @@ Supported profiles:
 
 | Firmware | HomeUI format | Validation |
 | --- | --- | --- |
-| 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Inside/bottom/white confirmed in 0.2.13; outside 0.2.14 awaiting console check |
+| 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Inside/bottom/white confirmed in 0.2.13; the 0.2.14 outside renderer is retained and awaits console confirmation |
 | 11.60 | `rnps-home 11.1.0+21887 / PS5 11.20 HOMEUI`, Hermes v89 | User-tested 0.2.8 baseline; original Hermes generation/patching logic retained |
+| 13.600.007 | `rnps-home 13.0.0+22834`, Hermes v89 | Reported console-tested by estate737 for PR #3; this combined ELF awaits independent console verification |
 
 Other firmware/HomeUI profiles have not been verified. Hermes retains its complete payload digest. RAM requires its exact startup, validated live table and per-edit source guards described in [BUILDING.md](BUILDING.md). Failed guards leave the entire buffer unchanged. New Media-shortcut registration on firmware 12+ is not implemented.
+
+On 13.60, configure the payload using FTP before launch; see [FW13.60.md](FW13.60.md). Adding the display profile does not add Media registration on firmware 12+.
 
 Requires a working jailbreak and a compatible privileged ELF loader. The payload does not provide a jailbreak.
 
 ## Installation
 
-1. Use the supplied `App_Title_v0.2.14.elf` test build for 4.03/11.60, or build it from this branch. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not support the 4.03 style profile.
+1. Use the supplied `App_Title_v0.2.15.elf` test build for the listed profiles, or build it from this branch. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not include the 4.03/13.60 profiles.
 2. Remove the previous App Title entry from autoload, or replace its file with the new ELF.
 3. Fully reboot the console to clear any previous resident version.
 4. Run your jailbreak, then load the ELF once or add it to your loader's autoload list.
-5. Wait about 20–30 seconds, then open **Media → App Title**.
+5. Wait about 20–30 seconds, then open **Media → App Title** on 4.03/11.60. On 13.60 use the configuration file described above.
 
 Choose the placement, position and colour, then select **Save** or press **OPTIONS**. The home scene refreshes to apply the settings. The settings interface is currently in Russian and supports D-pad / Cross navigation.
 
@@ -73,4 +76,6 @@ Build using PS5 Payload SDK **v0.41**, Clang/LLD 18 and `make`. Only the final s
 ## Credits
 
 Developed by **porhe911**. Thanks to the authors of [PS5-app_title](https://github.com/MasterPS0/PS5-app_title), [etaHEN](https://github.com/etaHEN/etaHEN), [Common FPS for PS5](https://github.com/porhe911/Common-FPS-for-PS5), [ps5-payload-sdk](https://github.com/ps5-payload-dev/sdk), [shsrv](https://github.com/ps5-payload-dev/shsrv) and [ShadowMountPlus](https://github.com/drakmor/ShadowMountPlus). Exact source revisions, adaptations and third-party licences are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+The 13.60 HomeUI profile and emitter adaptations were contributed by [estate737](https://github.com/estate737/App-Title/tree/fw13.60-support), commit `613df61a39ecc8cf0f57df00ff63aad8646d2c6a`.
 

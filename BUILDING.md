@@ -1,4 +1,4 @@
-# Build App Title 0.2.14
+# Build App Title 0.2.15
 
 Requires Linux/POSIX, LLVM/Clang 18, LLD 18, make, Python 3 and PS5 Payload SDK **v0.41**.
 
@@ -13,7 +13,7 @@ export PS5_PAYLOAD_SDK=/absolute/path/ps5-payload-sdk
 make -j4
 ```
 
-The only file needed on the console is `dist/App_Title_v0.2.14.elf`.
+The only file needed on the console is `dist/App_Title_v0.2.15.elf`.
 The shared object in `build/` is automatically embedded into the controller.
 No Actions job or external repository mutation is needed to build.
 
@@ -134,12 +134,12 @@ Independent JavaScript/geometry/layout checks for the compact fixture:
 node tools/verify_ram_bundle.js build-host/ram_variant_input.bin ram_variant_style_
 ```
 
-The private controller/shared status ABI remains 112 bytes in 0.2.14.
+The private controller/shared status ABI remains 112 bytes in 0.2.15.
 Both pieces must be built together. Bounded startup metadata includes the
 refused module ID and size; no automatic source dump is saved. Fully reboot
 to clear an old resident component before loading a new version.
 
-## Live component regression (0.2.14)
+## Live component regression (0.2.15)
 
 Outside mode keeps exact digests for modules 25, 102, 219 and 531. Modules
 527 and 552 use bounded source edits in `src/ram_js.hpp`: the module wrapper,
@@ -194,3 +194,23 @@ node tools/verify_ram_bundle.js build-host/ram_live_input.bin ram_context_0_styl
 `AppTitle.log` replaces its final HomeUI row at startup and after a user save;
 `AppTitle_shellui.log` replaces its bounded result when requested settings or
 validation outcome changes. Neither text file is periodically rewritten.
+
+## Combined Hermes profiles (0.2.15)
+
+The 13.600.007 profile is integrated from estate737 PR #3, commit
+`613df61a39ecc8cf0f57df00ff63aad8646d2c6a`. The runtime retains the
+4.03 raw/RNPS RAM dispatch before checking either exact Hermes profile.
+The 0.2.14 native worker, resource cleanup and RAM patcher are retained.
+
+`make home-style-test` runs both 11.60/13.60 generators in 24 style cases
+without firmware files, including exact/short capacities and unsigned RGBA.
+With `HOME_UI=/private/path/HomeUI_decrypted.bin`, the test accepts an external
+11.60 or 13.60 RNPS fixture, selects an independent per-profile write allowlist,
+checks eight complete rewrites, the footer digest and 15 corrupt-input refusals.
+13.60 outputs use `build-host/home_style_1360_<mode>.hbc`; 11.60 retains the
+existing filenames consumed by the legacy VM/layout tools.
+
+The existing `verify_*_vm.py` and legacy layout/parser tools are specific to
+the 11.60 fixture. Do not report them as 13.60 VM tests. The integration run
+has 4.03/11.60 fixtures; a complete 13.60 fixture and a run of this combined
+ELF on 13.60 are pending. See `FW13.60.md` for the FTP-only setup on 12+.

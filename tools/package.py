@@ -16,15 +16,20 @@ files={name:elf.read_bytes()}
 reports=sorted(ROOT.glob(f'VALIDATION_v{version}_*.md'))
 assert reports,'Validate this version before packaging'
 report=reports[-1].name
-for doc in ['CHANGELOG.md',report,'LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
+for doc in ['CHANGELOG.md',report,'FW13.60.md','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
     files[doc]=(ROOT/doc).read_bytes()
 files['README_RU.md']=(f'# App Title {version}\n\n'
-    f'Тестовая версия для 4.03: внешний режим использует существующие React-узлы, имена и свойства. Внутренний режим 0.2.13 подтверждён пользователем. На консоль нужен только {name}.\n\n'
+    f'Общая тестовая версия для профилей 4.03, 11.60 и 13.600.007. На консоль нужен только {name}.\n\n'
     'Замени прежний ELF в autoload и полностью перезагрузи PS5. Выполни jailbreak, загрузи ELF один раз и подожди 20–30 секунд.\n\n'
-    'Открой «Мультимедиа → App Title». Для первой проверки выбери «Белые ID под иконкой» и нажми «Сохранить» или OPTIONS.\n\n'
+    'На 4.03/11.60 открой «Мультимедиа → App Title». Выбери «Белые ID под иконкой» и нажми «Сохранить» или OPTIONS. На 13.60 ярлык не регистрируется: настрой config.ini через FTP до запуска; инструкция — [FW13.60.md](FW13.60.md).\n\n'
     'Исходники, лицензии и инструкция сборки: [source/README_RU.md](source/README_RU.md).\n'
-    'Локальные проверки исходного и изменённых HomeUI пройдены. Внешний режим этой сборки на PS5 ещё нужно подтвердить. Если он не применился, нажми «Подготовить файл для диагностики» и вернись в домашнее меню на 5 секунд: /data/AppTitle/HomeUI_live.bin содержит живой RAM до наших правок. Последний результат сохранения заменяет строку в коротком AppTitle.log. Автоматических дампов и постоянного журнала нет.\n').encode()
-for doc in ['Makefile','BUILDING.md','README.md','README_RU.md','CHANGELOG.md','.gitignore',report,'VALIDATION_v0.2.13_20261022.md','VALIDATION_v0.2.12_20261021.md','VALIDATION_v0.2.11_20261021.md','VALIDATION_v0.2.10_20261020.md','VALIDATION_v0.2.9_20261020.md','VALIDATION_v0.2.8_20261019.md','DEPENDENCIES.json','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
+    'Общий ELF ещё нужно проверить на консолях. Внешний режим 4.03 сохранён из 0.2.14, подтверждение ожидается; работу 13.60 для PR №3 сообщил его автор, estate737. Если внешний режим 4.03 не применился, нажми «Подготовить файл для диагностики» и вернись в домашнее меню на 5 секунд: /data/AppTitle/HomeUI_live.bin содержит живой RAM до наших правок. Последний результат сохранения заменяет строку в коротком AppTitle.log. Автоматических дампов и постоянного журнала нет.\n').encode()
+files['README.md']=(f'# App Title {version}\n\n'
+    f'Integration test build for the listed 4.03, 11.60 and 13.600.007 profiles. Load only {name} after a full reboot and jailbreak.\n\n'
+    'On 4.03/11.60 use Media → App Title. On 13.60 configure over FTP before launch: [FW13.60.md](FW13.60.md).\n\n'
+    'Combined-console verification is pending. The 4.03 outside renderer is retained from 0.2.14; 13.60 console success for PR #3 is reported by estate737.\n\n'
+    'Source, compatibility details and build instructions: [source/README.md](source/README.md).\n').encode()
+for doc in ['Makefile','BUILDING.md','README.md','README_RU.md','FW13.60.md','CHANGELOG.md','.gitignore',report,'VALIDATION_v0.2.14_20261022.md','VALIDATION_v0.2.13_20261022.md','VALIDATION_v0.2.12_20261021.md','VALIDATION_v0.2.11_20261021.md','VALIDATION_v0.2.10_20261020.md','VALIDATION_v0.2.9_20261020.md','VALIDATION_v0.2.8_20261019.md','DEPENDENCIES.json','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
     files['source/'+doc]=(ROOT/doc).read_bytes()
 for directory in ['src','include','assets','tools','tests','vendor','docs']:
     for path in sorted((ROOT/directory).rglob('*')):
@@ -37,6 +42,8 @@ with zipfile.ZipFile(archive) as z:
     assert z.testzip() is None
     assert z.read(name)==elf.read_bytes()
     assert set(z.namelist())==set(files)
+    assert 'FW13.60.md' in z.namelist() and 'source/FW13.60.md' in z.namelist()
+    assert not any(Path(path).name=='SHA256SUMS.txt' for path in z.namelist())
     for path,data in files.items():assert z.read(path)==data
 print(f'ELF: {elf.name}, {elf.stat().st_size} bytes')
 print(f'ZIP: {archive.name}, {archive.stat().st_size} bytes, {len(files)} entries; contents verified')

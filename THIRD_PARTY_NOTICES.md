@@ -3,6 +3,12 @@
 App Title application code: Copyright (C) 2026 porhe911,
 GPL-3.0-or-later. See `LICENSE`.
 
+The 13.60 profile metadata and emitter adaptations in `src/home_style.cpp` and
+`src/home_style_1360.inc` are contributed by estate737, from App Title PR #3,
+commit `613df61a39ecc8cf0f57df00ff63aad8646d2c6a` (GPL-3.0-or-later).
+Its console verification is reported by that contributor; integration tests
+and their limitations are recorded in this version's validation report.
+
 - The project idea and local appmeta location were inspected in
   [MasterPS0/PS5-app_title](https://github.com/MasterPS0/PS5-app_title), commit
   `4cbd5a783bec46d7d8bb7f0eb5621a8bd32667ec`. Its `main.c` was not copied.

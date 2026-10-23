@@ -98,5 +98,28 @@
     "observed_live_buffer_size": 1389168,
     "observed_live_module_527_size": 5271,
     "manual_diagnostics": "Explicit request only: capture validated raw RAM before our edits on a forced home refresh; 4 MiB allocation cap, worker-owned file IO, success/timeout cleanup. No automatic dump."
+  },
+  "native_home_style_1360": {
+    "repository": "estate737/App-Title",
+    "pull_request": "https://github.com/porhe911/App-Title/pull/3",
+    "commit": "613df61a39ecc8cf0f57df00ff63aad8646d2c6a",
+    "observed_firmware": "13.600.007",
+    "home_application": "rnps-home 13.0.0+22834",
+    "hermes_version": 89,
+    "payload_size": 1795460,
+    "function_count": 9727,
+    "source_hash": "80837fe66ccb00ba923f279c90b78c7c4813e543",
+    "bytecode_sha1": "8cae100a46561442979d1c4e073267515306d12a",
+    "patched_functions": [
+      1473,
+      6703,
+      6549,
+      6545,
+      282,
+      6484,
+      1079
+    ],
+    "validation": "Console success reported by estate737 for PR #3. Combined 0.2.15 console verification and an independently checked complete 13.60 fixture are pending. Both generators are exercised without firmware files.",
+    "media": "No new Media registration on firmware 12+; configure over FTP before launch."
   }
 }

@@ -59,14 +59,14 @@ static void notify(const char* message) {
 }
 int main() {
     using namespace app_title;
-    if(!prepare_data_directory()){notify("App Title 0.2.14: cannot create /data/AppTitle.");return 1;}
+    if(!prepare_data_directory()){notify("App Title 0.2.15: cannot create /data/AppTitle.");return 1;}
     record_launch("main.enter",0);
     // A held advisory lock prevents duplicate autoload workers, including after a shell restart.
     const int lock=open("/system_tmp/app_title.lock",O_CREAT|O_RDWR|O_NOFOLLOW,0600);
-    if(lock<0){const int error=errno;record_launch("lock.open_failed",error);notify("App Title 0.2.14: cannot open its lock. See AppTitle_launch.log.");return 1;}
+    if(lock<0){const int error=errno;record_launch("lock.open_failed",error);notify("App Title 0.2.15: cannot open its lock. See AppTitle_launch.log.");return 1;}
     if(flock(lock,LOCK_EX|LOCK_NB)!=0) {
         const int error=errno;record_launch("lock.acquire_failed",error);close(lock);
-        notify("App Title 0.2.14: lock unavailable; another instance may be running. See AppTitle_launch.log.");return 1;
+        notify("App Title 0.2.15: lock unavailable; another instance may be running. See AppTitle_launch.log.");return 1;
     }
     reset_log();
     log_fmt("App Title v%s EXPERIMENTAL",kVersion);
@@ -88,7 +88,7 @@ int main() {
     log_line("stage=media.begin");
     if(!app_title::ps5::ensure_media_launcher(kernel_get_fw_version())) {
         record_launch("media.cleanup_failed",-1);log_line("Media service cleanup or credential restoration failed; stopping");
-        notify("App Title 0.2.14: Media setup failed. See AppTitle.log.");return 1;
+        notify("App Title 0.2.15: Media setup failed. See AppTitle.log.");return 1;
     }
     log_line("stage=media.end");
     record_launch("settings.begin",0);
@@ -96,8 +96,8 @@ int main() {
     const bool settings_ready=start_settings(config,stats);
     log_fmt("stage=settings.end ready=%d",settings_ready?1:0);
     record_launch(settings_ready?"settings.ready":"settings.failed",settings_ready?0:-1);
-    if(!settings_ready)notify("App Title 0.2.14: settings server unavailable. See AppTitle.log.");
-    else notify("App Title 0.2.14: settings ready; initializing Title IDs.");
+    if(!settings_ready)notify("App Title 0.2.15: settings server unavailable. See AppTitle.log.");
+    else notify("App Title 0.2.15: settings ready; initializing Title IDs.");
     log_line("backend=native-titleid key=0x7802c916 PNG interception disabled");
     int previous=-1,stable=0;bool online=false,style_reported=false;unsigned style_wait=0;SessionGuard session{};
     log_line("stage=worker.loop");

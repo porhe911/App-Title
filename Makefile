@@ -12,8 +12,8 @@ CPPSRC := src/main.cpp src/core.cpp src/paths.cpp src/hooks.cpp src/relocate.cpp
 OBJ := $(addprefix build/obj/,$(CSRC:.c=.o) $(CPPSRC:.cpp=.o))
 
 .PHONY: all clean verify-elf host-test media-test hooks-test shellui-test runtime-test style-test export-test home-style-test ram-style-test
-all: dist/App_Title_v0.2.14.elf verify-elf
-build/App_Title_ShellUI.elf: src/shellui.cpp src/paths.cpp src/home_style.cpp src/home_ram.cpp src/home_style.hpp src/ram_js.hpp src/live_ram_export.hpp include/app_title.hpp Makefile
+all: dist/App_Title_v0.2.15.elf verify-elf
+build/App_Title_ShellUI.elf: src/shellui.cpp src/paths.cpp src/home_style.cpp src/home_style_1360.inc src/home_ram.cpp src/home_style.hpp src/ram_js.hpp src/live_ram_export.hpp include/app_title.hpp Makefile
 	@mkdir -p build
 	$(CXX) $(CXXFLAGS) -fvisibility=hidden -shared -Wl,-Bsymbolic -Wl,-e,elf_main -Wl,-z,now -Wl,--hash-style=sysv -Wl,--gc-sections -Wl,-soname,libAppTitle.so src/shellui.cpp src/paths.cpp src/home_style.cpp src/home_ram.cpp $(SHELLUI_LDLIBS) -o $@
 build/shellui_blob.cpp: build/App_Title_ShellUI.elf tools/embed.py
@@ -30,10 +30,10 @@ build/obj/%.o: %.cpp
 build/obj/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(FLAGS) -c $< -o $@
-dist/App_Title_v0.2.14.elf: $(OBJ) Makefile
+dist/App_Title_v0.2.15.elf: $(OBJ) Makefile
 	@mkdir -p dist
 	$(CXX) -Wl,--gc-sections $(OBJ) $(LDLIBS) -o $@
-verify-elf: dist/App_Title_v0.2.14.elf build/App_Title_ShellUI.elf
+verify-elf: dist/App_Title_v0.2.15.elf build/App_Title_ShellUI.elf
 	python3 tools/verify_elf.py
 host-test:
 	@mkdir -p build-host
