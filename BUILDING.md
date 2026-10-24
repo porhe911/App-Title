@@ -214,3 +214,13 @@ The existing `verify_*_vm.py` and legacy layout/parser tools are specific to
 the 11.60 fixture. Do not report them as 13.60 VM tests. The integration run
 has 4.03/11.60 fixtures; a complete 13.60 fixture and a run of this combined
 ELF on 13.60 are pending. See `FW13.60.md` for the FTP-only setup on 12+.
+
+## Release acceptance (2026-10-24)
+
+The owner confirmed App Title 0.2.15 working on 4.03 and approved publication.
+The release uses the exact ELF from the 2026-10-23 integration validation;
+release preparation changes only documentation and packaging, not payload
+source, embedded assets or compiler output. Historical reports remain intact.
+See `VALIDATION_v0.2.15_20261024.md` for the current acceptance scope.
+The 13.60 profile retains the contributor's verification status; a separate
+run of the combined ELF on 13.60 remains pending.

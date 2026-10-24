@@ -91,7 +91,7 @@
       219
     ],
     "scope": "Exact startup/table and 25/102/219/531 digests; 527/552 use bounded React-call, import and property guards with real live bindings. Preserve original image props, visibility and text expression. All writes staged in actual slots; inside edits 219 only.",
-    "validation": "User confirmed inside/bottom/white display on 4.03 in 0.2.13. Outside 0.2.14 passes host structure/execution/layout cases; console confirmation pending. Latest provided startup log describes inside mode, not the later outside failure.",
+    "validation": "The owner confirmed the combined 0.2.15 ELF working on 4.03 on 2026-10-24 after the requested outside/position/colour check and approved publication. No independent native-console instrumentation or long-session game/FTP test is claimed.",
     "transport": "RNPS envelope or raw payload; ordered non-overlapping source entries and bounded trailing alignment; source addresses resolved from the live table.",
     "startup_sha1": "67a129582f323eee0448924a0d7523e03259287b",
     "observed_live_payload_size": 1385934,
@@ -119,7 +119,7 @@
       6484,
       1079
     ],
-    "validation": "Console success reported by estate737 for PR #3. Combined 0.2.15 console verification and an independently checked complete 13.60 fixture are pending. Both generators are exercised without firmware files.",
+    "validation": "Console success reported by estate737 for PR #3. The combined 0.2.15 ELF is owner-confirmed on 4.03; its separate 13.60 console verification and a complete 13.60 fixture remain pending. Both generators are exercised without firmware files.",
     "media": "No new Media registration on firmware 12+; configure over FTP before launch."
   }
 }

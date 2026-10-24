@@ -2,9 +2,9 @@
 
 Standalone PS5 ELF payload that displays game and application title IDs on the home screen, with a persistent settings shortcut in **Media**.
 
-**0.2.15 integration test build:** combines the 4.03 fixes through 0.2.14 with estate737's exact 13.60 profile from [PR #3](https://github.com/porhe911/App-Title/pull/3). Keeps resource cleanup, bounded logs, live RAM export and all settings. The combined ELF still needs console checks; the 4.03 outside renderer is unchanged from the pending 0.2.14 candidate.
+**App Title 0.2.15:** the owner confirmed this ELF working on 4.03 on 2026-10-24. Includes live RAM rendering, resource cleanup, bounded logs, manual diagnostics and estate737's exact 13.60 profile from [PR #3](https://github.com/porhe911/App-Title/pull/3). The distributed ELF is the same file used for that console test; 13.60 verification remains attributed to the contributor.
 
-[Download v0.2.8](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) · [Русский README](README_RU.md) · [Build instructions](BUILDING.md)
+[Download v0.2.15](https://github.com/porhe911/App-Title/releases/tag/v0.2.15) · [Русский README](README_RU.md) · [Build instructions](BUILDING.md)
 
 ## Preview
 
@@ -30,7 +30,7 @@ Supported profiles:
 
 | Firmware | HomeUI format | Validation |
 | --- | --- | --- |
-| 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Inside/bottom/white confirmed in 0.2.13; the 0.2.14 outside renderer is retained and awaits console confirmation |
+| 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Owner confirmed 0.2.15 working after the requested outside/position/colour check, 2026-10-24 |
 | 11.60 | `rnps-home 11.1.0+21887 / PS5 11.20 HOMEUI`, Hermes v89 | User-tested 0.2.8 baseline; original Hermes generation/patching logic retained |
 | 13.600.007 | `rnps-home 13.0.0+22834`, Hermes v89 | Reported console-tested by estate737 for PR #3; this combined ELF awaits independent console verification |
 
@@ -42,7 +42,7 @@ Requires a working jailbreak and a compatible privileged ELF loader. The payload
 
 ## Installation
 
-1. Use the supplied `App_Title_v0.2.15.elf` test build for the listed profiles, or build it from this branch. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not include the 4.03/13.60 profiles.
+1. Download `App_Title_v0.2.15.elf` from [Releases](https://github.com/porhe911/App-Title/releases/tag/v0.2.15), or build it from this source. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not include the 4.03/13.60 profiles.
 2. Remove the previous App Title entry from autoload, or replace its file with the new ELF.
 3. Fully reboot the console to clear any previous resident version.
 4. Run your jailbreak, then load the ELF once or add it to your loader's autoload list.

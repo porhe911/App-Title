@@ -1,13 +1,13 @@
 # Changelog
 
-## 0.2.15 — combined 4.03 / 11.60 / 13.60 test build
+## 0.2.15 — 2026-10-24
 
 - Integrate estate737's exact 13.600.007 Hermes profile from PR #3 with the 0.2.14 RAM renderer and diagnostics. Preserve contribution history and attribution.
 - Keep raw/padded RAM handling, live module-table lookup, inside-mode independence, manual live export, bounded last-save results and Mono/AppInstUtil/UserService cleanup.
 - Exercise both Hermes generators in 24 colour/position/placement cases. Let the external-fixture test select the 11.60 or 13.60 write allowlist; a 13.60 fixture is still needed to validate the complete new-profile rewrite independently.
 - Retain the existing tested Mono detach stub and lifecycle checks; restore a working combined `shellui-test`.
 - Include `FW13.60.md` both beside the packaged README and in source. No checksum manifest is included.
-- Combined-console checks remain pending. In particular, this integration does not claim a new fix for the still-pending 4.03 outside display or the separate delayed game/FTP issue. Media registration on 12+ is still unavailable.
+- The owner confirmed the combined 0.2.15 ELF working on 4.03 on 2026-10-24 and approved publication. The tested ELF is distributed unchanged. 13.60 verification remains attributed to estate737; Media registration on 12+ is still unavailable. No long-run fix for the separate delayed game/FTP report is claimed.
 
 ## 0.2.14 — outside renderer and live diagnostics test build
 
