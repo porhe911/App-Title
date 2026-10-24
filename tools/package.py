@@ -19,13 +19,13 @@ report=reports[-1].name
 for doc in ['CHANGELOG.md',report,'FW13.60.md','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
     files[doc]=(ROOT/doc).read_bytes()
 files['README_RU.md']=(f'# App Title {version}\n\n'
-    f'Релиз для указанных профилей 4.03, 11.60 и 13.600.007. На консоль нужен только {name}.\n\n'
+    f'Релиз для указанных профилей 4.03, 11.60 и 13.60. На консоль нужен только {name}.\n\n'
     'Замени прежний ELF в autoload и полностью перезагрузи PS5. Выполни jailbreak, загрузи ELF один раз и подожди 20–30 секунд.\n\n'
     'На 4.03/11.60 открой «Мультимедиа → App Title». Выбери «Белые ID под иконкой» и нажми «Сохранить» или OPTIONS. На 13.60 ярлык не регистрируется: настрой config.ini через FTP до запуска; инструкция — [FW13.60.md](FW13.60.md).\n\n'
     'Исходники, лицензии и инструкция сборки: [source/README_RU.md](source/README_RU.md).\n'
     'Работа этого ELF на 4.03 подтверждена владельцем 24.10.2026. Проверку 13.60 для PR №3 сообщил его автор, estate737; отдельная проверка общего ELF на 13.60 пока не выполнена. Если внешний режим 4.03 не применился, нажми «Подготовить файл для диагностики» и вернись в домашнее меню на 5 секунд: /data/AppTitle/HomeUI_live.bin содержит живой RAM до наших правок. Последний результат сохранения заменяет строку в коротком AppTitle.log. Автоматических дампов и постоянного журнала нет.\n').encode()
 files['README.md']=(f'# App Title {version}\n\n'
-    f'Release for the listed 4.03, 11.60 and 13.600.007 profiles. Load only {name} after a full reboot and jailbreak.\n\n'
+    f'Release for the listed 4.03, 11.60 and 13.60 profiles. Load only {name} after a full reboot and jailbreak.\n\n'
     'On 4.03/11.60 use Media → App Title. On 13.60 configure over FTP before launch: [FW13.60.md](FW13.60.md).\n\n'
     'The owner confirmed this exact ELF on 4.03 on 2026-10-24. 13.60 console success for PR #3 is reported by estate737; this combined ELF still needs a separate 13.60 check.\n\n'
     'Source, compatibility details and build instructions: [source/README.md](source/README.md).\n').encode()

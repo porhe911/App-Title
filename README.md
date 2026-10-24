@@ -32,7 +32,7 @@ Supported profiles:
 | --- | --- | --- |
 | 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Owner confirmed 0.2.15 working after the requested outside/position/colour check, 2026-10-24 |
 | 11.60 | `rnps-home 11.1.0+21887 / PS5 11.20 HOMEUI`, Hermes v89 | User-tested 0.2.8 baseline; original Hermes generation/patching logic retained |
-| 13.600.007 | `rnps-home 13.0.0+22834`, Hermes v89 | Reported console-tested by estate737 for PR #3; this combined ELF awaits independent console verification |
+| 13.60 | `rnps-home 13.0.0+22834`, Hermes v89 | Reported console-tested by estate737 for PR #3; this combined ELF awaits independent console verification |
 
 Other firmware/HomeUI profiles have not been verified. Hermes retains its complete payload digest. RAM requires its exact startup, validated live table and per-edit source guards described in [BUILDING.md](BUILDING.md). Failed guards leave the entire buffer unchanged. New Media-shortcut registration on firmware 12+ is not implemented.
 

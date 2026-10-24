@@ -37,7 +37,7 @@ GC scheduling or a long console session.
 - The combined 0.2.15 ELF has not run on a console during this integration.
 - On 4.03, inside/bottom/white was confirmed by the user for 0.2.13. The unchanged 0.2.14 outside renderer and live-export workflow still await console confirmation. This candidate does not claim a new outside-rendering fix.
 - On 11.60, the user-confirmed release baseline remains 0.2.8; byte equality and VM tests support regression confidence, not a new console result.
-- On 13.600.007, estate737 reports console success for PR #3. No complete 13.60 fixture was available here. New-profile generator checks and faithful integration do not independently verify the source string/literal tables or every copied function. Run `make home-style-test HOME_UI=/private/path/13.60/HomeUI_decrypted.bin` when that fixture is available, and visually test this combined ELF.
+- On 13.60, estate737 reports console success for PR #3. No complete 13.60 fixture was available here. New-profile generator checks and faithful integration do not independently verify the source string/literal tables or every copied function. Run `make home-style-test HOME_UI=/private/path/13.60/HomeUI_decrypted.bin` when that fixture is available, and visually test this combined ELF.
 - Media registration on firmware 12+ is not implemented. Configure 13.60 over FTP before starting the ELF; the settings listener remains localhost-only.
 - The separate delayed game-launch/FTP report has no demonstrated root cause or long-run fix in this candidate. No kernel, FakePkg, FTP or game-launch patches were added.
 

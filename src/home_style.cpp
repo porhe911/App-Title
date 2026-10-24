@@ -34,7 +34,7 @@ struct Writer {
     explicit Writer(bool fw1360=false):modern(fw1360){}
     unsigned id(unsigned n) const {
         if(!modern)return n;
-        // Audited string IDs in the stock 13.600.007 HomeUI. These are IDs,
+        // Audited string IDs in the stock 13.60 HomeUI. These are IDs,
         // not offsets into the older profile or global search replacements.
         switch(n) {
             case 58:return 54;case 5305:return 6515;case 9034:return 9180;

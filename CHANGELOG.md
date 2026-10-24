@@ -2,7 +2,7 @@
 
 ## 0.2.15 — 2026-10-24
 
-- Integrate estate737's exact 13.600.007 Hermes profile from PR #3 with the 0.2.14 RAM renderer and diagnostics. Preserve contribution history and attribution.
+- Integrate estate737's exact 13.60 Hermes profile from PR #3 with the 0.2.14 RAM renderer and diagnostics. Preserve contribution history and attribution.
 - Keep raw/padded RAM handling, live module-table lookup, inside-mode independence, manual live export, bounded last-save results and Mono/AppInstUtil/UserService cleanup.
 - Exercise both Hermes generators in 24 colour/position/placement cases. Let the external-fixture test select the 11.60 or 13.60 write allowlist; a 13.60 fixture is still needed to validate the complete new-profile rewrite independently.
 - Retain the existing tested Mono detach stub and lifecycle checks; restore a working combined `shellui-test`.

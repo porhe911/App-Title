@@ -197,7 +197,7 @@ validation outcome changes. Neither text file is periodically rewritten.
 
 ## Combined Hermes profiles (0.2.15)
 
-The 13.600.007 profile is integrated from estate737 PR #3, commit
+The 13.60 profile is integrated from estate737 PR #3, commit
 `613df61a39ecc8cf0f57df00ff63aad8646d2c6a`. The runtime retains the
 4.03 raw/RNPS RAM dispatch before checking either exact Hermes profile.
 The 0.2.14 native worker, resource cleanup and RAM patcher are retained.

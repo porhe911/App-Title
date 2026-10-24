@@ -16,7 +16,7 @@ in `VALIDATION_v0.2.15_20261023.md`.
 | --- | --- |
 | 4.03 RAM | Combined 0.2.15 confirmed working by the owner on 2026-10-24 |
 | 11.60 Hermes | Previously confirmed 0.2.8 baseline; all eight complete generated HBC results remain byte-identical |
-| 13.600.007 Hermes | Original PR #3 console success reported by estate737; separate combined-ELF confirmation remains pending |
+| 13.60 Hermes | Original PR #3 console success reported by estate737; separate combined-ELF confirmation remains pending |
 
 Media registration on 12+ remains unavailable. The separate delayed game/FTP
 report has no demonstrated long-run resolution. No universal firmware support
