@@ -12,7 +12,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define PROBE_VERSION "0.2.8"
+#define PROBE_VERSION "0.2.15"
 #define MAX_IMAGE (32u*1024u*1024u)
 static const unsigned char hbc_magic[8]={0xc6,0x1f,0xbc,0x03,0xc1,0x03,0x19,0x1f};
 
@@ -54,24 +54,26 @@ typedef struct {
     int64_t trailing_size;
     int64_t hbc_offset;
     uint32_t hbc_version;
+    uint32_t ram_modules,ram_startup_size;
     decrypt_result device;
 } result;
 static int publish(const char* path,const result* r) {
     char text[1024];
     const int n=snprintf(text,sizeof(text),
-        "App_Title v%s diagnostic\npid=%d fw=0x%08" PRIx32 "\n"
+        "App Title v%s diagnostic\npid=%d fw=0x%08" PRIx32 "\n"
         "stage=%s success=%d errno=%d\n"
         "image_size=%zu input_fnv1a64=%016" PRIx64 " output_fnv1a64=%016" PRIx64 "\n"
         "header_magic=%s version=%" PRIu32 "\n"
         "region_offset=%" PRIu32 " region_size=%" PRIu32 " region_end=%" PRIu32 " trailing_size=%" PRId64 "\n"
         "ioctl_rc=%d ioctl_errno=%d device_error=0x%08" PRIx32 "\n"
         "hermes_offset=%" PRId64 " hermes_version=%" PRIu32 "\n"
+        "ram_modules=%" PRIu32 " ram_startup_size=%" PRIu32 "\n"
         "Scope=NPXS40002 only; source opened read-only; no process hooks or system-file writes.\n",
         PROBE_VERSION,(int)getpid(),r->fw,r->stage,r->success,r->error,
         r->size,r->before,r->after,r->header_magic,r->header_version,
         r->region_offset,r->region_size,r->region_end,r->trailing_size,
         r->device.ioctl_rc,r->device.saved_errno,
-        r->device.device_error,r->hbc_offset,r->hbc_version);
+        r->device.device_error,r->hbc_offset,r->hbc_version,r->ram_modules,r->ram_startup_size);
     return n>0&&(size_t)n<sizeof(text)?atomic_copy(path,text,(size_t)n):-1;
 }
 int style_probe(const char* input,const char* output,const char* report,
@@ -135,9 +137,15 @@ int style_probe(const char* input,const char* output,const char* report,
     for(size_t i=0;i+12<=r.size;++i)if(!memcmp(data+i,hbc_magic,8)) {
         r.hbc_offset=(int64_t)i;r.hbc_version=u32(data+i+8);break;
     }
+    if(r.region_size>=12&&u32(data+r.region_offset)==0xfb0bd1e5u) {
+        const uint32_t count=u32(data+r.region_offset+4),startup=u32(data+r.region_offset+8);
+        if(count>0&&12ull+8ull*count+startup<=r.region_size) {
+            r.ram_modules=count;r.ram_startup_size=startup;
+        }
+    }
     r.stage="output.write";
     if(atomic_copy(output,data,r.size)<0){r.error=errno;goto done;}
-    r.stage=r.hbc_offset>=0?"saved.hermes_detected":"saved.format_pending_analysis";
+    r.stage=r.ram_modules?"saved.ram_bundle_detected":r.hbc_offset>=0?"saved.hermes_detected":"saved.format_pending_analysis";
     r.success=1;
 done:
     if(fd>=0)close(fd);
@@ -145,3 +153,4 @@ done:
     if(publish(report,&r)<0)return 1;
     return r.success?0:1;
 }
+

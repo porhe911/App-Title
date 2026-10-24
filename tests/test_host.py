@@ -51,7 +51,7 @@ try:
         time.sleep(.05)
     else:raise RuntimeError('Host settings server did not start')
     assert len(state['token'])==32 and state['placement']=='outside'
-    assert state['version']=='0.2.8' and state['queries']==7 and state['overrides']==5 and state['style_supported'] is True
+    assert state['version']=='0.2.15' and state['queries']==7 and state['overrides']==5 and state['style_supported'] is True
     assert state['position']=='bottom' and state['color']=='ffffff' and state['style_state']==2 and state['style_patches']==1
     duplicate=subprocess.run([str(BUILD/'settings_host')],cwd=ROOT,timeout=3,
                              stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
@@ -83,3 +83,4 @@ try:
     print('PASS: saved settings survive service restart')
 finally:
     server.terminate();server.wait(timeout=5)
+

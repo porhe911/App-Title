@@ -8,7 +8,8 @@ __pycache__/
 *.o
 *.d
 *.log
-HomeUI_decrypted.bin
+HomeUI_decrypted*.bin
 *.hbc
 config.ini
 .DS_Store
+

@@ -1,34 +1,50 @@
 #!/usr/bin/env python3
 """Package only release files and source; exclude local tools and test outputs."""
 from pathlib import Path
-import hashlib
+import re
 import shutil
 import zipfile
 
 ROOT=Path(__file__).resolve().parent.parent
 OUT=ROOT.parent/'deliverables'
 OUT.mkdir(exist_ok=True)
-name='App_Title_v0.2.8.elf'
+version=re.search(r'kVersion\[\] = "([^"]+)"',(ROOT/'include/app_title.hpp').read_text()).group(1)
+name=f'App_Title_v{version}.elf'
 elf=OUT/name
 shutil.copyfile(ROOT/'dist'/name,elf)
 files={name:elf.read_bytes()}
-for doc in ['README.md','README_RU.md','CHANGELOG.md','VALIDATION_v0.2.8_20261019.md','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
+reports=sorted(ROOT.glob(f'VALIDATION_v{version}_*.md'))
+assert reports,'Validate this version before packaging'
+report=reports[-1].name
+for doc in ['CHANGELOG.md',report,'FW13.60.md','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
     files[doc]=(ROOT/doc).read_bytes()
-for doc in ['Makefile','BUILDING.md','README.md','README_RU.md','CHANGELOG.md','.gitignore','VALIDATION_v0.2.8_20261019.md','DEPENDENCIES.json','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
+files['README_RU.md']=(f'# App Title {version}\n\n'
+    f'Релиз для указанных профилей 4.03, 11.60 и 13.600.007. На консоль нужен только {name}.\n\n'
+    'Замени прежний ELF в autoload и полностью перезагрузи PS5. Выполни jailbreak, загрузи ELF один раз и подожди 20–30 секунд.\n\n'
+    'На 4.03/11.60 открой «Мультимедиа → App Title». Выбери «Белые ID под иконкой» и нажми «Сохранить» или OPTIONS. На 13.60 ярлык не регистрируется: настрой config.ini через FTP до запуска; инструкция — [FW13.60.md](FW13.60.md).\n\n'
+    'Исходники, лицензии и инструкция сборки: [source/README_RU.md](source/README_RU.md).\n'
+    'Работа этого ELF на 4.03 подтверждена владельцем 24.10.2026. Проверку 13.60 для PR №3 сообщил его автор, estate737; отдельная проверка общего ELF на 13.60 пока не выполнена. Если внешний режим 4.03 не применился, нажми «Подготовить файл для диагностики» и вернись в домашнее меню на 5 секунд: /data/AppTitle/HomeUI_live.bin содержит живой RAM до наших правок. Последний результат сохранения заменяет строку в коротком AppTitle.log. Автоматических дампов и постоянного журнала нет.\n').encode()
+files['README.md']=(f'# App Title {version}\n\n'
+    f'Release for the listed 4.03, 11.60 and 13.600.007 profiles. Load only {name} after a full reboot and jailbreak.\n\n'
+    'On 4.03/11.60 use Media → App Title. On 13.60 configure over FTP before launch: [FW13.60.md](FW13.60.md).\n\n'
+    'The owner confirmed this exact ELF on 4.03 on 2026-10-24. 13.60 console success for PR #3 is reported by estate737; this combined ELF still needs a separate 13.60 check.\n\n'
+    'Source, compatibility details and build instructions: [source/README.md](source/README.md).\n').encode()
+for doc in ['Makefile','BUILDING.md','README.md','README_RU.md','FW13.60.md','CHANGELOG.md','.gitignore',report,'VALIDATION_v0.2.15_20261023.md','VALIDATION_v0.2.14_20261022.md','VALIDATION_v0.2.13_20261022.md','VALIDATION_v0.2.12_20261021.md','VALIDATION_v0.2.11_20261021.md','VALIDATION_v0.2.10_20261020.md','VALIDATION_v0.2.9_20261020.md','VALIDATION_v0.2.8_20261019.md','DEPENDENCIES.json','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
     files['source/'+doc]=(ROOT/doc).read_bytes()
-for directory in ['src','include','assets','tools','tests','vendor']:
+for directory in ['src','include','assets','tools','tests','vendor','docs']:
     for path in sorted((ROOT/directory).rglob('*')):
         if path.is_file() and '__pycache__' not in path.parts and path.suffix!='.pyc':
             files['source/'+path.relative_to(ROOT).as_posix()]=path.read_bytes()
-files['SHA256SUMS.txt']=''.join(hashlib.sha256(data).hexdigest()+'  '+path+'\n' for path,data in sorted(files.items())).encode()
-archive=OUT/'App_Title_v0.2.8.zip'
+archive=OUT/f'App_Title_v{version}.zip'
 with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
     for path,data in sorted(files.items()):z.writestr(path,data)
 with zipfile.ZipFile(archive) as z:
     assert z.testzip() is None
     assert z.read(name)==elf.read_bytes()
-    for line in z.read('SHA256SUMS.txt').decode().splitlines():
-        digest,path=line.split('  ',1)
-        assert hashlib.sha256(z.read(path)).hexdigest()==digest
-print(f'ELF: {elf.name}, {elf.stat().st_size} bytes, SHA256 {hashlib.sha256(elf.read_bytes()).hexdigest()}')
-print(f'ZIP: {archive.name}, {archive.stat().st_size} bytes, {len(files)} entries; CRC and every packaged SHA256 verified')
+    assert set(z.namelist())==set(files)
+    assert 'FW13.60.md' in z.namelist() and 'source/FW13.60.md' in z.namelist()
+    assert not any(Path(path).name=='SHA256SUMS.txt' for path in z.namelist())
+    for path,data in files.items():assert z.read(path)==data
+print(f'ELF: {elf.name}, {elf.stat().st_size} bytes')
+print(f'ZIP: {archive.name}, {archive.stat().st_size} bytes, {len(files)} entries; contents verified')
+
