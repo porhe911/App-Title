@@ -15,56 +15,56 @@ jobs:
         shell: bash
         run: |
           python3 - <<'PY'
-            from pathlib import Path
-            import base64, zlib, hashlib
-            p=Path('src/home_style.cpp')
-            original=p.read_bytes()
-            git_blob=hashlib.sha1(b'blob '+str(len(original)).encode()+b'\0'+original).hexdigest()
-            assert git_blob=='251131f1be71438657365406b5080c3e2872e6e0',git_blob
-            inc=zlib.decompress(base64.b64decode(''.join("""
-            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""".split())))
-            assert hashlib.sha256(inc).hexdigest()=='8c4fcd928cc6a057f8c0b0852d492106e8710a3486266bd744a0a6f565a5f0c9'
-            text=original.decode()
-            anchor='#include "home_style_1360.inc"'
-            hook='    const bool modern=!std::memcmp(hbc+12,source_hash1360,20);'
-            assert text.count(anchor)==1 and text.count(hook)==1
-            text=text.replace(anchor,anchor+'\n#include "home_style_fw905.inc"',1)
-            text=text.replace(hook, '    if (!std::memcmp(hbc+12,source_hash905,20))\n        return patch_home_style_905(hbc,plain,config);\n'+hook,1)
-            p.write_text(text)
-            Path('src/home_style_fw905.inc').write_bytes(inc)
-            print('FW905 source patched, SHA256:', hashlib.sha256(inc).hexdigest())
+          from pathlib import Path
+          import base64, zlib, hashlib
+          p=Path('src/home_style.cpp')
+          original=p.read_bytes()
+          git_blob=hashlib.sha1(b'blob '+str(len(original)).encode()+b'\0'+original).hexdigest()
+          assert git_blob=='251131f1be71438657365406b5080c3e2872e6e0',git_blob
+          inc=zlib.decompress(base64.b64decode(''.join("""
+          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""".split())))
+          assert hashlib.sha256(inc).hexdigest()=='8c4fcd928cc6a057f8c0b0852d492106e8710a3486266bd744a0a6f565a5f0c9'
+          text=original.decode()
+          anchor='#include "home_style_1360.inc"'
+          hook='    const bool modern=!std::memcmp(hbc+12,source_hash1360,20);'
+          assert text.count(anchor)==1 and text.count(hook)==1
+          text=text.replace(anchor,anchor+'\n#include "home_style_fw905.inc"',1)
+          text=text.replace(hook, '    if (!std::memcmp(hbc+12,source_hash905,20))\n        return patch_home_style_905(hbc,plain,config);\n'+hook,1)
+          p.write_text(text)
+          Path('src/home_style_fw905.inc').write_bytes(inc)
+          print('FW905 source patched, SHA256:', hashlib.sha256(inc).hexdigest())
           PY
       - name: Install LLVM 18 and SDK v0.41
         shell: bash
