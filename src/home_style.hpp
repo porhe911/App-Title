@@ -6,7 +6,7 @@ namespace app_title {
 enum class HomeStyleResult : unsigned { ignored=0, applied=1, unsupported=2, invalid=3 };
 // Only the in-memory, driver-decrypted HomeUI buffer is modified. A known
 // Hermes digest, or RAM startup, table and per-edit source guards, must agree. Supports
-// the guarded 4.03 JavaScript RAM profile and exact 11.60/13.60 Hermes profiles.
+// the guarded 4.03 JavaScript RAM profile and exact 9.05/11.60/13.60 Hermes profiles.
 HomeStyleResult patch_home_style(void* bundle,std::size_t size,const Config& config,StyleInput* observed=nullptr);
 using RamSourceObserver=void(*)(const void*,std::size_t);
 void set_ram_source_observer(RamSourceObserver observer);
