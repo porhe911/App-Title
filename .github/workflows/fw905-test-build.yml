@@ -1,4 +1,4 @@
-name: TEST FW905 R8FIX PS5 ELF (no release)
+name: TEST FW905 R8_R19_FIX PS5 ELF (no release)
 on:
   push:
     branches:
@@ -64,6 +64,17 @@ jobs:
           assert inc.count(old_row)==1 and inc.count(old_strand)==1
           inc=inc.replace(old_row,new_row).replace(old_strand,new_strand)
           assert hashlib.sha256(inc).hexdigest()=='7f97dfca5f4027badeba16b83b3fd42149e987bfd5a7dfaa8f802cbe231a0ad2'
+          # FW9.05 v3: preserve original R8=loadComponents in the Tile's
+          # Suspense branch. The children array uses the otherwise-unused R19.
+          old_children=b'const std::uint8_t outside_children[]={8,7,3,7,8,2,0,66,8,5,0,66,8,15,1};'
+          new_children=b'const std::uint8_t outside_children[]={8,7,3,7,19,2,0,66,19,5,0,66,19,15,1};'
+          old_ordinary=b'const std::uint8_t ordinary_children[]={61,0,8,94};'
+          new_ordinary=b'const std::uint8_t ordinary_children[]={61,0,19,94};'
+          old_capture=b'const std::uint8_t capture_children[]={61,1,8,94};'
+          new_capture=b'const std::uint8_t capture_children[]={61,1,19,94};'
+          assert inc.count(old_children)==1 and inc.count(old_ordinary)==1 and inc.count(old_capture)==1
+          inc=inc.replace(old_children,new_children).replace(old_ordinary,new_ordinary).replace(old_capture,new_capture)
+          assert hashlib.sha256(inc).hexdigest()=='cdcd08233e55530d74a66889e91018bf182bfaa0c4b843dc4d74bda0e76a3f77'
           text=original.decode()
           anchor='#include "home_style_1360.inc"'
           hook='    const bool modern=!std::memcmp(hbc+12,source_hash1360,20);'
@@ -91,11 +102,11 @@ jobs:
           python3 tools/verify_elf.py
           file dist/App_Title_v0.2.15.elf
           sha256sum dist/App_Title_v0.2.15.elf
-          cp dist/App_Title_v0.2.15.elf dist/App_Title_FW905_R8FIX_TEST.elf
+          cp dist/App_Title_v0.2.15.elf dist/App_Title_FW905_R8_R19_FIX_TEST.elf
       - name: Upload test ELF
         uses: actions/upload-artifact@v4
         with:
-          name: App_Title_FW905_R8FIX_TEST_not_runtime_verified
-          path: dist/App_Title_FW905_R8FIX_TEST.elf
+          name: App_Title_FW905_R8_R19_FIX_TEST_not_runtime_verified
+          path: dist/App_Title_FW905_R8_R19_FIX_TEST.elf
           if-no-files-found: error
           retention-days: 7
