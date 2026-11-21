@@ -240,3 +240,5 @@ python3 tools/package.py
 The release CI checks the exact SHA-256 of the unchanged FW9.05 source adapter, the ELF's target dependencies and embedded ShellUI, the complete host suite and the pinned release-binary SHA-256 before publishing `App_Title_v0.2.16.elf`. Once published, the legacy firmware-specific release is retired; v0.2.15 remains available.
 
 The source and test record are in `FW9.05.md`, `VALIDATION_FW905_20261121.md` and `VALIDATION_v0.2.16_20261121.md`.
+
+Reproducible v0.2.16 build checksum (299400 bytes): `1cce350410947f0901d2b03c11712fc577522f574454cc3d8aea2666ef1f7b0d`. This checksum applies to the newly versioned build, not to the previously console-tested R3 ELF.

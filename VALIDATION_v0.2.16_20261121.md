@@ -18,3 +18,9 @@ The GitHub Actions runs are the source for actual results; do not treat these re
 
 ## Runtime scope
 PS5 9.05 has user confirmation for R3's visual behavior only. Version 0.2.16 changes internal version text and filename; console runtime confirmation of that newly named binary is still pending. No exhaustive all-firmware regression, firmware 9.00 support or long-session stability is claimed.
+
+## Completed offline validation
+
+- Release branch GitHub Actions: https://github.com/porhe911/App-Title/actions/runs/44901259226 — PASS (SDK v0.41/Clang-LLD 18, exact embedded-ShellUI ELF verification, all native-host regression targets, source ZIP CRC and contents verification).
+- Rebuilt v0.2.16 ELF: 299400 bytes, SHA-256 `1cce350410947f0901d2b03c11712fc577522f574454cc3d8aea2666ef1f7b0d`.
+- Historic R3 owner-tested version: `e010cb4ca281a17874756267e7eb7fde97578de88b8ae77a10a793c505b60d6d`; the two differ because the application version and startup messages changed. Do not claim the new version was already visually tested on PS5.

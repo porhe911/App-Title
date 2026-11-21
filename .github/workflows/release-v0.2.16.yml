@@ -62,7 +62,7 @@ jobs:
           sha256sum App_Title_v0.2.16.elf App_Title_v0.2.16.zip > SHA256SUMS_v0.2.16.txt
           cat SHA256SUMS_v0.2.16.txt
           if test -f ../release/SHA256_v0.2.16.txt; then
-            sha256sum -c ../release/SHA256_v0.2.16.txt
+            (cd .. && sha256sum -c release/SHA256_v0.2.16.txt)
           fi
       - name: Upload versioned release candidate
         uses: actions/upload-artifact@v4

@@ -10,6 +10,8 @@ A single standalone PS5 ELF with HomeUI profile support for **4.03, 9.05, 11.60 
 - Standardized the version and filename: `App_Title_v0.2.16.elf` with internal `0.2.16` and consistent startup notifications.
 - Kept precise per-profile checks; no Sony firmware or decrypted HomeUI files are shipped.
 
+**v0.2.16 ELF SHA-256:** `1cce350410947f0901d2b03c11712fc577522f574454cc3d8aea2666ef1f7b0d` (299400 bytes).
+
 **Console verification:** the 9.05 R3 candidate was confirmed working by the project owner on 2026-11-21. The normal v0.2.16 rebuild is mechanically based on that fix but has a different binary checksum due to version changes. Its build, ELF verification, tests and checksums are independently validated; it has not yet been rechecked on-console as v0.2.16.
 
 ## Install

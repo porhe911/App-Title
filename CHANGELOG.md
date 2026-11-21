@@ -2,6 +2,8 @@
 
 ## 0.2.16 — 2026-11-21
 
+- Normal release ELF: `App_Title_v0.2.16.elf` (SHA-256 `1cce350410947f0901d2b03c11712fc577522f574454cc3d8aea2666ef1f7b0d`; verified through PS5 Payload SDK build and host tests).
+
 - Add an exact-match Hermes v89 HomeUI profile for **PS5 firmware 9.05** using a user-supplied diagnostic fixture (not redistributed).
 - Correct outside-icon ID positioning by moving the Title ID into a separate child view, reserving layout space and adapting geometry/animations; preserve inside/outside, top/bottom and text colour settings.
 - Fix two Hermes register-liveness issues found after the first console test: the experienceTitle style object remains in R8 (the height constant uses R10), and loadComponents remains in R8 (the new child array uses R19).
