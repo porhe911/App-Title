@@ -9,7 +9,7 @@
 - R3 fixes both overwrites by using R10 and R19; owner explicitly reported: **«вот теперь работает корректно, можно публиковать»** on 2026-11-21.
 - R3 build GitHub Actions: <https://github.com/porhe911/App-Title/actions/runs/44899221042> — PS5 Payload SDK v0.41, clang/LLD 18 and ELF verification PASS.
 - Console-tested executable: `App_Title_FW905_R3_TEST.elf`, 299,400 bytes, SHA-256 `e010cb4ca281a17874756267e7eb7fde97578de88b8ae77a10a793c505b60d6d`.
-- Published name: `App_Title_FW905_R3.elf` (exact same bytes). Release CI requires an exact SHA-256 match.
+- Historical short-lived public name: `App_Title_FW905_R3.elf` (exact same bytes). Replaced by the general v0.2.16 publication. The v0.2.16 binary is rebuilt with a new internal version and is **not** the identical R3 binary.
 
 ## What the acceptance does NOT claim
 

@@ -108,7 +108,14 @@
     "input_sha256_private_fixture": "0929015521f86885a238778a75dc6aef4d2b89add1596dcfc10b0977f2ff4cd4",
     "source_hash": "587635687e0a190e38425232c39092888da5adbe",
     "bytecode_sha1": "16bc51563118e0c0e7417b440ad82dbd795197f0",
-    "patched_functions_outside": [1390, 5610, 5408, 5404, 253, 972],
+    "patched_functions_outside": [
+      1390,
+      5610,
+      5408,
+      5404,
+      253,
+      972
+    ],
     "sha256_console_tested_elf_r3": "e010cb4ca281a17874756267e7eb7fde97578de88b8ae77a10a793c505b60d6d",
     "validation": "Project owner confirmed R3 ELF working correctly on PS5 9.05 on 2026-11-21. No independent or long-session certification.",
     "scope": "Exact source/hash/function guard, in-memory patch only; private Sony bytecode and firmware dumps are not distributed."
@@ -135,5 +142,13 @@
     ],
     "validation": "Console success reported by estate737 for PR #3. The combined 0.2.15 ELF is owner-confirmed on 4.03; its separate 13.60 console verification and a complete 13.60 fixture remain pending. Both generators are exercised without firmware files.",
     "media": "No new Media registration on firmware 12+; configure over FTP before launch."
+  },
+  "release_v0_2_16": {
+    "version": "0.2.16",
+    "filename": "App_Title_v0.2.16.elf",
+    "sha256": "1cce350410947f0901d2b03c11712fc577522f574454cc3d8aea2666ef1f7b0d",
+    "size_bytes": 299400,
+    "build_validation": "GitHub Actions 44901259226 SDK v0.41 / clang 18 / native host tests / package CRC PASS",
+    "console_validation": "R3 firmware 9.05 confirmed by owner 2026-11-21; 0.2.16 version-bump rebuild not separately console-tested"
   }
 }

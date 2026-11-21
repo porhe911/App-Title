@@ -1,14 +1,16 @@
 # Changelog
 
-## 0.2.15-fw905 — 2026-11-21
+## 0.2.16 — 2026-11-21
+
+- Normal release ELF: `App_Title_v0.2.16.elf` (SHA-256 `1cce350410947f0901d2b03c11712fc577522f574454cc3d8aea2666ef1f7b0d`; verified through PS5 Payload SDK build and host tests).
 
 - Add an exact-match Hermes v89 HomeUI profile for **PS5 firmware 9.05** using a user-supplied diagnostic fixture (not redistributed).
 - Correct outside-icon ID positioning by moving the Title ID into a separate child view, reserving layout space and adapting geometry/animations; preserve inside/outside, top/bottom and text colour settings.
 - Fix two Hermes register-liveness issues found after the first console test: the experienceTitle style object remains in R8 (the height constant uses R10), and loadComponents remains in R8 (the new child array uses R19).
 - Owner reports the **R3 test ELF functioning correctly on PS5 9.05 on 2026-11-21**. This is user-confirmed console acceptance of that test, not a long-running or independent device certification.
-- Build the release from source and require its SHA-256 to match the exact owner-tested R3 payload: `e010cb4ca281a17874756267e7eb7fde97578de88b8ae77a10a793c505b60d6d`.
+- Preserve the exact R3 source profile used in owner-tested firmware 9.05 build (`e010cb4ca281a17874756267e7eb7fde97578de88b8ae77a10a793c505b60d6d` is the **historical R3 ELF hash**, not the hash of v0.2.16). Rebuild with new version and normal release filename.
 - Keep 4.03 RAM, 11.60 Hermes and 13.60 Hermes profiles unchanged. Unknown or altered HomeUI inputs are refused before writing.
-- Retain internal 0.2.15 version string to preserve the exact byte-for-byte console-tested ELF. The `fw905` suffix is a firmware-specific update, not an untested binary version bump.
+- Bump the actual internal version, startup notifications, Makefile output and verification to 0.2.16. Publish a single general App Title version; the version-bumped ELF requires its own SHA/host checks and has not been independently tested on console.
 
 
 ## 0.2.15 — 2026-10-24
