@@ -224,3 +224,20 @@ source, embedded assets or compiler output. Historical reports remain intact.
 See `VALIDATION_v0.2.15_20261024.md` for the current acceptance scope.
 The 13.60 profile retains the contributor's verification status; a separate
 run of the combined ELF on 13.60 remains pending.
+
+## Exact FW 9.05 console-accepted R3 build
+
+The FW9.05 source profile is now committed as `src/home_style_fw905.inc` and included by `src/home_style.cpp`. The Makefile tracks the new include as a ShellUI dependency. It contains only numeric metadata and newly generated patch instructions; the private console HomeUI is not in the repository.
+
+Build using the same SDK v0.41 and Clang/LLD 18 as the accepted R3:
+
+```sh
+export PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk
+make -j4
+python3 tools/verify_elf.py
+sha256sum dist/App_Title_v0.2.15.elf
+```
+
+For the `v0.2.15-fw905` release the output must match the console-tested **exact ELF SHA-256** `e010cb4ca281a17874756267e7eb7fde97578de88b8ae77a10a793c505b60d6d` (299400 bytes). The CI release workflow compares this hash and **will not publish** any differing output. The final file is renamed `App_Title_FW905_R3.elf` without changing its bytes.
+
+The 0.2.15 version string is intentionally unchanged, to avoid silently substituting a different, untested binary. The firmware-targeted suffix is carried by the release tag. Existing 4.03 RAM and 11.60/13.60 Hermes profile code remains unchanged. Unlike full-system QA, compiler/host tests cannot establish the console runtime result; 9.05 owner-reported acceptance is documented separately in `VALIDATION_FW905_20261121.md`.
