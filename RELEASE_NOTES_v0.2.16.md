@@ -1,5 +1,3 @@
-# App Title v0.2.16
-
 A single standalone PS5 ELF with HomeUI profile support for **4.03, 9.05, 11.60 and 13.60**.
 
 ## Changes
