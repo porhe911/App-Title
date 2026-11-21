@@ -2,9 +2,9 @@
 
 Standalone PS5 ELF payload that displays game and application title IDs on the home screen, with a persistent settings shortcut in **Media**.
 
-**App Title 0.2.15:** the owner confirmed this ELF working on 4.03 on 2026-10-24. Includes live RAM rendering, resource cleanup, bounded logs, manual diagnostics and estate737's exact 13.60 profile from [PR #3](https://github.com/porhe911/App-Title/pull/3). The distributed ELF is the same file used for that console test; 13.60 verification remains attributed to the contributor.
+**App Title 0.2.15 + FW9.05 update:** the FW9.05 R3 ELF was confirmed working on the console by the owner on 2026-11-21. It retains the tested 0.2.15 controller and adds the exact 9.05 HomeUI style profile. The previous 0.2.15 release remains available. Original baseline: the owner confirmed this ELF working on 4.03 on 2026-10-24. Includes live RAM rendering, resource cleanup, bounded logs, manual diagnostics and estate737's exact 13.60 profile from [PR #3](https://github.com/porhe911/App-Title/pull/3). The distributed ELF is the same file used for that console test; 13.60 verification remains attributed to the contributor.
 
-[Download v0.2.15](https://github.com/porhe911/App-Title/releases/tag/v0.2.15) · [Русский README](README_RU.md) · [Build instructions](BUILDING.md)
+[Download FW9.05 update](https://github.com/porhe911/App-Title/releases/tag/v0.2.15-fw905) · [Original v0.2.15](https://github.com/porhe911/App-Title/releases/tag/v0.2.15) · [Русский README](README_RU.md) · [Build instructions](BUILDING.md)
 
 ## Preview
 
@@ -31,10 +31,11 @@ Supported profiles:
 | Firmware | HomeUI format | Validation |
 | --- | --- | --- |
 | 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Owner confirmed 0.2.15 working after the requested outside/position/colour check, 2026-10-24 |
+| 9.05 | Exact 9.05 HomeUI, Hermes v89 | Owner confirmed FW9.05 R3 ELF works correctly on 2026-11-21; full regression/longevity not claimed |
 | 11.60 | `rnps-home 11.1.0+21887 / PS5 11.20 HOMEUI`, Hermes v89 | User-tested 0.2.8 baseline; original Hermes generation/patching logic retained |
 | 13.60 | `rnps-home 13.0.0+22834`, Hermes v89 | Reported console-tested by estate737 for PR #3; this combined ELF awaits independent console verification |
 
-Other firmware/HomeUI profiles have not been verified. Hermes retains its complete payload digest. RAM requires its exact startup, validated live table and per-edit source guards described in [BUILDING.md](BUILDING.md). Failed guards leave the entire buffer unchanged. New Media-shortcut registration on firmware 12+ is not implemented.
+Other firmware/HomeUI profiles have not been verified. The 9.05 profile is exact-match only; its console diagnostic bytecode is **not** distributed. See [FW9.05.md](FW9.05.md) for verification and setup. Hermes retains its complete payload digest. RAM requires its exact startup, validated live table and per-edit source guards described in [BUILDING.md](BUILDING.md). Failed guards leave the entire buffer unchanged. New Media-shortcut registration on firmware 12+ is not implemented.
 
 On 13.60, configure the payload using FTP before launch; see [FW13.60.md](FW13.60.md). Adding the display profile does not add Media registration on firmware 12+.
 
@@ -42,7 +43,7 @@ Requires a working jailbreak and a compatible privileged ELF loader. The payload
 
 ## Installation
 
-1. Download `App_Title_v0.2.15.elf` from [Releases](https://github.com/porhe911/App-Title/releases/tag/v0.2.15), or build it from this source. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not include the 4.03/13.60 profiles.
+1. For PS5 9.05, download `App_Title_FW905_R3.elf` from the [FW9.05 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.15-fw905). For other supported profiles, the [v0.2.15 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.15) remains available. Build from source if preferred. The [published 0.2.8 release](https://github.com/porhe911/App-Title/releases/tag/v0.2.8) does not include the 4.03/13.60 profiles.
 2. Remove the previous App Title entry from autoload, or replace its file with the new ELF.
 3. Fully reboot the console to clear any previous resident version.
 4. Run your jailbreak, then load the ELF once or add it to your loader's autoload list.
