@@ -5,7 +5,7 @@
 #include <cstdint>
 
 namespace app_title {
-constexpr char kVersion[] = "0.2.15";
+constexpr char kVersion[] = "0.2.16";
 #ifdef APP_TITLE_HOST_TEST
 constexpr char kDirectory[] = "./build-host/AppTitle";
 constexpr char kConfig[] = "./build-host/config.ini";

@@ -16,22 +16,22 @@ files={name:elf.read_bytes()}
 reports=sorted(ROOT.glob(f'VALIDATION_v{version}_*.md'))
 assert reports,'Validate this version before packaging'
 report=reports[-1].name
-for doc in ['CHANGELOG.md',report,'FW13.60.md','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
+for doc in ['CHANGELOG.md',report,'FW13.60.md','FW9.05.md','VALIDATION_FW905_20261121.md','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
     files[doc]=(ROOT/doc).read_bytes()
 files['README_RU.md']=(f'# App Title {version}\n\n'
-    f'Релиз для указанных профилей 4.03, 11.60 и 13.60. На консоль нужен только {name}.\n\n'
+    f'Релиз для указанных профилей 4.03, 9.05, 11.60 и 13.60. На консоль нужен только {name}.\n\n'
     'Замени прежний ELF в autoload и полностью перезагрузи PS5. Выполни jailbreak, загрузи ELF один раз и подожди 20–30 секунд.\n\n'
-    'На 4.03/11.60 открой «Мультимедиа → App Title». Выбери «Белые ID под иконкой» и нажми «Сохранить» или OPTIONS. На 13.60 ярлык не регистрируется: настрой config.ini через FTP до запуска; инструкция — [FW13.60.md](FW13.60.md).\n\n'
+    'На 4.03/9.05/11.60 открой «Мультимедиа → App Title». Выбери «Белые ID под иконкой» и нажми «Сохранить» или OPTIONS. На 13.60 ярлык не регистрируется: настрой config.ini через FTP до запуска; инструкция — [FW13.60.md](FW13.60.md).\n\n'
     'Исходники, лицензии и инструкция сборки: [source/README_RU.md](source/README_RU.md).\n'
     'Работа этого ELF на 4.03 подтверждена владельцем 24.10.2026. Проверку 13.60 для PR №3 сообщил его автор, estate737; отдельная проверка общего ELF на 13.60 пока не выполнена. Если внешний режим 4.03 не применился, нажми «Подготовить файл для диагностики» и вернись в домашнее меню на 5 секунд: /data/AppTitle/HomeUI_live.bin содержит живой RAM до наших правок. Последний результат сохранения заменяет строку в коротком AppTitle.log. Автоматических дампов и постоянного журнала нет.\n').encode()
 files['README.md']=(f'# App Title {version}\n\n'
-    f'Release for the listed 4.03, 11.60 and 13.60 profiles. Load only {name} after a full reboot and jailbreak.\n\n'
-    'On 4.03/11.60 use Media → App Title. On 13.60 configure over FTP before launch: [FW13.60.md](FW13.60.md).\n\n'
+    f'Release for the listed 4.03, 9.05, 11.60 and 13.60 profiles. Load only {name} after a full reboot and jailbreak.\n\n'
+    'On 4.03/9.05/11.60 use Media → App Title. On 13.60 configure over FTP before launch: [FW13.60.md](FW13.60.md).\n\n'
     'The owner confirmed this exact ELF on 4.03 on 2026-10-24. 13.60 console success for PR #3 is reported by estate737; this combined ELF still needs a separate 13.60 check.\n\n'
     'Source, compatibility details and build instructions: [source/README.md](source/README.md).\n').encode()
-for doc in ['Makefile','BUILDING.md','README.md','README_RU.md','FW13.60.md','CHANGELOG.md','.gitignore',report,'VALIDATION_v0.2.15_20261023.md','VALIDATION_v0.2.14_20261022.md','VALIDATION_v0.2.13_20261022.md','VALIDATION_v0.2.12_20261021.md','VALIDATION_v0.2.11_20261021.md','VALIDATION_v0.2.10_20261020.md','VALIDATION_v0.2.9_20261020.md','VALIDATION_v0.2.8_20261019.md','DEPENDENCIES.json','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
+for doc in ['Makefile','BUILDING.md','README.md','README_RU.md','FW13.60.md','FW9.05.md','CHANGELOG.md','.gitignore',report,'VALIDATION_FW905_20261121.md','VALIDATION_v0.2.15_20261023.md','VALIDATION_v0.2.14_20261022.md','VALIDATION_v0.2.13_20261022.md','VALIDATION_v0.2.12_20261021.md','VALIDATION_v0.2.11_20261021.md','VALIDATION_v0.2.10_20261020.md','VALIDATION_v0.2.9_20261020.md','VALIDATION_v0.2.8_20261019.md','DEPENDENCIES.json','LICENSE','LICENSE-HDE64.txt','THIRD_PARTY_NOTICES.md']:
     files['source/'+doc]=(ROOT/doc).read_bytes()
-for directory in ['src','include','assets','tools','tests','vendor','docs']:
+for directory in ['src','include','assets','tools','tests','vendor','docs','.github']:
     for path in sorted((ROOT/directory).rglob('*')):
         if path.is_file() and '__pycache__' not in path.parts and path.suffix!='.pyc':
             files['source/'+path.relative_to(ROOT).as_posix()]=path.read_bytes()
@@ -43,6 +43,7 @@ with zipfile.ZipFile(archive) as z:
     assert z.read(name)==elf.read_bytes()
     assert set(z.namelist())==set(files)
     assert 'FW13.60.md' in z.namelist() and 'source/FW13.60.md' in z.namelist()
+    assert 'FW9.05.md' in z.namelist() and 'source/FW9.05.md' in z.namelist()
     assert not any(Path(path).name=='SHA256SUMS.txt' for path in z.namelist())
     for path,data in files.items():assert z.read(path)==data
 print(f'ELF: {elf.name}, {elf.stat().st_size} bytes')

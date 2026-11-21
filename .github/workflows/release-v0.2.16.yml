@@ -1,0 +1,103 @@
+name: App Title v0.2.16 release
+on:
+  push:
+    branches:
+      - release/v0.2.16-standard
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PS5 Payload SDK and clang 18
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y clang-18 lld-18 unzip g++ gcc make binutils
+          curl -fLsS --retry 3 https://github.com/ps5-payload-dev/sdk/releases/download/v0.41/ps5-payload-sdk.zip -o /tmp/ps5-payload-sdk.zip
+          sudo unzip -q /tmp/ps5-payload-sdk.zip -d /opt
+          test -x /opt/ps5-payload-sdk/bin/prospero-clang++
+      - name: Build and verify one standalone versioned PS5 ELF
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk
+          export PATH=/usr/lib/llvm-18/bin:$PATH
+          echo "cdcd08233e55530d74a66889e91018bf182bfaa0c4b843dc4d74bda0e76a3f77  src/home_style_fw905.inc" | sha256sum -c -
+          grep -q 'kVersion\[\] = "0.2.16"' include/app_title.hpp
+          make -j4
+          python3 tools/verify_elf.py
+          test -s dist/App_Title_v0.2.16.elf
+          file dist/App_Title_v0.2.16.elf
+          sha256sum dist/App_Title_v0.2.16.elf
+      - name: Run native host regression suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          make host-test
+          make media-test
+          make hooks-test
+          make shellui-test
+          make runtime-test
+          make style-test
+          make export-test
+          make home-style-test
+          make ram-style-test
+      - name: Package version 0.2.16 and verify published files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/package.py
+          test -s ../deliverables/App_Title_v0.2.16.zip
+          test -s ../deliverables/App_Title_v0.2.16.elf
+          cmp dist/App_Title_v0.2.16.elf ../deliverables/App_Title_v0.2.16.elf
+          cp ../deliverables/App_Title_v0.2.16.zip dist/App_Title_v0.2.16.zip
+          cd dist
+          sha256sum App_Title_v0.2.16.elf App_Title_v0.2.16.zip > SHA256SUMS_v0.2.16.txt
+          cat SHA256SUMS_v0.2.16.txt
+          if test -f ../release/SHA256_v0.2.16.txt; then
+            sha256sum -c ../release/SHA256_v0.2.16.txt
+          fi
+      - name: Upload versioned release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: App_Title_v0.2.16_build
+          path: |
+            dist/App_Title_v0.2.16.elf
+            dist/App_Title_v0.2.16.zip
+            dist/SHA256SUMS_v0.2.16.txt
+          retention-days: 30
+          if-no-files-found: error
+      - name: Publish standard release and retire temporary FW9.05 tag
+        if: "${{ github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'v0.2.16-publish-ready') }}"
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f release/SHA256_v0.2.16.txt
+          sha256sum -c release/SHA256_v0.2.16.txt
+          if gh release view v0.2.16 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "v0.2.16 already exists: refuse overwrite"
+            exit 1
+          fi
+          gh release create v0.2.16 \
+            dist/App_Title_v0.2.16.elf \
+            dist/App_Title_v0.2.16.zip \
+            dist/SHA256SUMS_v0.2.16.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "App Title v0.2.16" \
+            --notes-file RELEASE_NOTES_v0.2.16.md \
+            --latest
+          gh release view v0.2.16 --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets | length == 3' | grep -qx true
+          if gh release view v0.2.15-fw905 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release delete v0.2.15-fw905 --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
+          fi
+          echo "Published v0.2.16 and removed superseded firmware-only release"
