@@ -1,4 +1,4 @@
-name: TEST FW905 PS5 ELF (no release)
+name: TEST FW905 R8FIX PS5 ELF (no release)
 on:
   push:
     branches:
@@ -56,6 +56,14 @@ jobs:
           Xs6Jik1+ovB8AniSYtaTXmK+uzpaC6KqEELrR9JS+A8BYMMQ4ELuhQpHrsmIOYRGtiBvypg06wQsCaFiVue7HLozJhi5/cIxRjrj1AvjJ//AjI7fA752Px40KrOtuXg+UkyMexVtrXYo
           apVnsvo18HSrg2hXb+Zdzd4Fde5mfW/6kzO1v8XTNE0qfclYyC5eLVlN9DGizrLdeoURd9So3zto+gbY8Em+nR7f1D7E4So/MHTttv+2RHgsPfeLrQNHYOt1lqrS9J8SOQdM""".split())))
           assert hashlib.sha256(inc).hexdigest()=='8c4fcd928cc6a057f8c0b0852d492106e8710a3486266bd744a0a6f565a5f0c9'
+          # FW9.05 v2: restore live R8 object in the strand style function.
+          old_row=b'const std::uint8_t row_height[]={109,8,0x50,0x01,0,0,57,9,8,13,146,0};'
+          new_row=b'const std::uint8_t row_height[]={109,10,0x50,0x01,0,0,57,9,10,13,146,0};'
+          old_strand=b'const std::uint8_t strand_height[]={109,8,0x50,0x01,0,0,57,7,8,13,146,0};'
+          new_strand=b'const std::uint8_t strand_height[]={109,10,0x50,0x01,0,0,57,7,10,13,146,0};'
+          assert inc.count(old_row)==1 and inc.count(old_strand)==1
+          inc=inc.replace(old_row,new_row).replace(old_strand,new_strand)
+          assert hashlib.sha256(inc).hexdigest()=='7f97dfca5f4027badeba16b83b3fd42149e987bfd5a7dfaa8f802cbe231a0ad2'
           text=original.decode()
           anchor='#include "home_style_1360.inc"'
           hook='    const bool modern=!std::memcmp(hbc+12,source_hash1360,20);'
@@ -83,11 +91,11 @@ jobs:
           python3 tools/verify_elf.py
           file dist/App_Title_v0.2.15.elf
           sha256sum dist/App_Title_v0.2.15.elf
-          cp dist/App_Title_v0.2.15.elf dist/App_Title_FW905_TEST.elf
+          cp dist/App_Title_v0.2.15.elf dist/App_Title_FW905_R8FIX_TEST.elf
       - name: Upload test ELF
         uses: actions/upload-artifact@v4
         with:
-          name: App_Title_FW905_TEST_not_runtime_verified
-          path: dist/App_Title_FW905_TEST.elf
+          name: App_Title_FW905_R8FIX_TEST_not_runtime_verified
+          path: dist/App_Title_FW905_R8FIX_TEST.elf
           if-no-files-found: error
           retention-days: 7
