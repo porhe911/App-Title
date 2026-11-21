@@ -88,6 +88,7 @@ constexpr ProfileFunction functions1160[]={
     {1079,0xdaff4,361,{0xf4,0xaf,0x0d,0x08,0x69,0x81,0x7f,0x00,0x44,0x1e,0x1b,0x26,0x00,0x07,0x07,0x02},{0x25,0x70,0xcf,0x43,0x11,0xad,0xb1,0xbc,0x97,0xcd,0xc3,0xd6,0x26,0x3a,0x9c,0x22,0xd2,0x20,0x65,0xdc}},
 };
 #include "home_style_1360.inc"
+#include "home_style_fw905.inc"
 constexpr std::size_t tile_size=622;
 std::size_t build_outer_tile(const std::uint8_t* original,std::uint8_t output[tile_size],bool modern=false) {
     std::size_t used=0;
@@ -245,6 +246,8 @@ HomeStyleResult patch_home_style(void* value,std::size_t size,const Config& conf
     constexpr std::uint8_t magic[]={0xc6,0x1f,0xbc,0x03,0xc1,0x03,0x19,0x1f};
     if(std::memcmp(hbc,magic,8))return HomeStyleResult::ignored;
     if(observed){observed->format=1;observed->payload_size=plain;}
+    if (!std::memcmp(hbc+12,source_hash905,20))
+        return patch_home_style_905(hbc,plain,config);
     const bool modern=!std::memcmp(hbc+12,source_hash1360,20);
     if(!modern&&std::memcmp(hbc+12,source_hash,20))
         return contains(hbc,plain,"isHomeTitleIdDisplayEnabled")?HomeStyleResult::unsupported:HomeStyleResult::ignored;

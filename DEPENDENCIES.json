@@ -99,6 +99,20 @@
     "observed_live_module_527_size": 5271,
     "manual_diagnostics": "Explicit request only: capture validated raw RAM before our edits on a forced home refresh; 4 MiB allocation cap, worker-owned file IO, success/timeout cleanup. No automatic dump."
   },
+  "native_home_style_905": {
+    "observed_firmware": "9.05",
+    "home_application": "PS5 FW 9.05 HomeUI",
+    "hermes_version": 89,
+    "payload_size": 1591008,
+    "function_count": 8261,
+    "input_sha256_private_fixture": "0929015521f86885a238778a75dc6aef4d2b89add1596dcfc10b0977f2ff4cd4",
+    "source_hash": "587635687e0a190e38425232c39092888da5adbe",
+    "bytecode_sha1": "16bc51563118e0c0e7417b440ad82dbd795197f0",
+    "patched_functions_outside": [1390, 5610, 5408, 5404, 253, 972],
+    "sha256_console_tested_elf_r3": "e010cb4ca281a17874756267e7eb7fde97578de88b8ae77a10a793c505b60d6d",
+    "validation": "Project owner confirmed R3 ELF working correctly on PS5 9.05 on 2026-11-21. No independent or long-session certification.",
+    "scope": "Exact source/hash/function guard, in-memory patch only; private Sony bytecode and firmware dumps are not distributed."
+  },
   "native_home_style_1360": {
     "repository": "estate737/App-Title",
     "pull_request": "https://github.com/porhe911/App-Title/pull/3",
