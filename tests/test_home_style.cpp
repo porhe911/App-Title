@@ -45,6 +45,21 @@ int main(int argc,char** argv) {
             if(value==rgba)++rgba_constants;
         }
         assert(rgba_constants==1);
+        // The exact 13.x HomeUI renderer nests Text inside a background View.
+        // Verify complete encoded style anchoring, not merely instruction size.
+        if(profile==HomeStyleProfile::fw1360&&outside) {
+            const unsigned char prefix[]={3,9,113,1,0x38,0x0c,61,9,1,198,120,1};
+            const unsigned char top_anchor[]={61,9,1,242,61,9,1,158,62,9,1,0x7e,0x21};
+            const unsigned char bottom[]={62,9,1,0x1f,0x13,61,9,1,158,62,9,1,0x7e,0x21};
+            const auto has=[&](const unsigned char* seq,std::size_t len) {
+                for(std::size_t i=1;i+len<=n+1;++i)
+                    if(!std::memcmp(generated+i,seq,len))return true;
+                return false;
+            };
+            // 3128=absolute; 8574=right; 4895=bottom (little endian).
+            assert(has(prefix,sizeof(prefix)));
+            assert(top ? has(top_anchor,sizeof(top_anchor)) : has(bottom,sizeof(bottom)));
+        }
         std::uint8_t refused[199];std::memset(refused,0x5a,sizeof(refused));
         assert(!build_title_style(refused,n-1,config,profile));for(auto value:refused)assert(value==0x5a);
         assert(build_title_style(refused,n,config,profile)==n&&!std::memcmp(refused,generated+1,n));
