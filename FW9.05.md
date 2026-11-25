@@ -1,6 +1,6 @@
 # PS5 9.05 HomeUI support
 
-The general **App Title v0.2.16** ELF supports exact-match PS5 firmware 9.05 HomeUI (Hermes v89) alongside the existing 4.03, 11.60 and 13.60 profiles.
+The general **App Title v0.2.17** ELF supports exact-match PS5 firmware 9.05 HomeUI (Hermes v89) alongside the existing 4.03, 11.60, 13.00 and 13.60 profiles.
 
 ## Evidence
 
@@ -15,7 +15,7 @@ The private decrypted HomeUI and console logs are **not** distributed. Unknown H
 
 ## Installation
 
-Download `App_Title_v0.2.16.elf` from [v0.2.16](https://github.com/porhe911/App-Title/releases/tag/v0.2.16). Disable old autoload, fully reboot PS5, jailbreak, run only one App-Title ELF and select **Outside / Below** in **Media → App Title**.
+Download `App_Title_v0.2.17.elf` from [v0.2.17](https://github.com/porhe911/App-Title/releases/tag/v0.2.17). Disable old autoload, fully reboot PS5, jailbreak, run only one App-Title ELF and select **Outside / Below** in **Media → App Title**.
 
 On firmware 12+ automatic Media registration is not provided; configure via FTP, as described in [FW13.60.md](FW13.60.md).
 

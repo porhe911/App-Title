@@ -1,4 +1,4 @@
-# Build App Title 0.2.16
+# Build App Title 0.2.17
 
 Requires Linux/POSIX, LLVM/Clang 18, LLD 18, make, Python 3 and PS5 Payload SDK **v0.41**.
 
@@ -13,7 +13,7 @@ export PS5_PAYLOAD_SDK=/absolute/path/ps5-payload-sdk
 make -j4
 ```
 
-The only file needed on the console is `dist/App_Title_v0.2.16.elf`.
+The only file needed on the console is `dist/App_Title_v0.2.17.elf`.
 The shared object in `build/` is automatically embedded into the controller.
 No Actions job or external repository mutation is needed to build.
 
@@ -242,3 +242,7 @@ The release CI checks the exact SHA-256 of the unchanged FW9.05 source adapter, 
 The source and test record are in `FW9.05.md`, `VALIDATION_FW905_20261121.md` and `VALIDATION_v0.2.16_20261121.md`.
 
 Reproducible v0.2.16 build checksum (299400 bytes): `1cce350410947f0901d2b03c11712fc577522f574454cc3d8aea2666ef1f7b0d`. This checksum applies to the newly versioned build, not to the previously console-tested R3 ELF.
+
+## v0.2.17 shared 13.00/13.60 profile
+
+The 13.00 private fixture matches the existing 13.60 payload digest and metadata. The wrapper fix anchors the background View rather than its nested Text. Run `make home-style-test HOME_UI=/path/to/private/HomeUI_FW1300.bin` for complete fixture validation. The owner verified the test ELF on 13.00; the normal version-bumped release is independently checked by CI. See `VALIDATION_v0.2.17_20261125.md`. No firmware dumps are included.

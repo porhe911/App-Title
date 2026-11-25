@@ -2,9 +2,9 @@
 
 Standalone PS5 ELF payload that displays game and application title IDs on the home screen, with a persistent settings shortcut in **Media**.
 
-**App Title v0.2.16:** one standalone ELF for supported HomeUI profiles on PS5 4.03, 9.05, 11.60 and 13.60. The firmware 9.05 fix is based on R3, confirmed working by the owner on 2026-11-21. Version 0.2.16 is rebuilt with corrected in-app version strings and has separate offline verification; a new console run of the relabelled ELF is not claimed. Previous confirmed 4.03 baseline and the 13.60 contribution remain credited below.
+**App Title v0.2.17:** fixes outside-icon Title ID placement on PS5 13.00 and the matching 13.60 HomeUI profile. The owner confirmed the 13.00 fix on 2026-11-25. The version-bumped release rebuild is separately CI-tested, not separately console-tested. Earlier profiles and contributor attribution are preserved.
 
-[Download v0.2.16](https://github.com/porhe911/App-Title/releases/tag/v0.2.16) · [Previous v0.2.15](https://github.com/porhe911/App-Title/releases/tag/v0.2.15) · [Русский README](README_RU.md) · [Build instructions](BUILDING.md)
+[Download v0.2.17](https://github.com/porhe911/App-Title/releases/tag/v0.2.17) · [Previous v0.2.16](https://github.com/porhe911/App-Title/releases/tag/v0.2.16) · [Русский README](README_RU.md) · [Build instructions](BUILDING.md)
 
 ## Preview
 
@@ -33,21 +33,22 @@ Supported profiles:
 | 4.03 | `rnps-home_v2_ppr_releases_04.00`, Indexed RAM bundle | Owner confirmed 0.2.15 working after the requested outside/position/colour check, 2026-10-24 |
 | 9.05 | Exact 9.05 HomeUI, Hermes v89 | Owner confirmed the 9.05 R3 layout on 2026-11-21; v0.2.16 version-bump rebuild is CI-tested but not separately console-tested |
 | 11.60 | `rnps-home 11.1.0+21887 / PS5 11.20 HOMEUI`, Hermes v89 | User-tested 0.2.8 baseline; original Hermes generation/patching logic retained |
-| 13.60 | `rnps-home 13.0.0+22834`, Hermes v89 | Reported console-tested by estate737 for PR #3; this combined ELF awaits independent console verification |
+| 13.00 | Exact same Hermes v89 HomeUI payload as 13.60 | Owner confirmed corrected outside placement on 2026-11-25 (test ELF) |
+| 13.60 | `rnps-home 13.0.0+22834`, Hermes v89 | Original profile contributed and tested by estate737; revised layout not separately tested on 13.60 |
 
 Other firmware/HomeUI profiles have not been verified. The 9.05 profile is exact-match only; its console diagnostic bytecode is **not** distributed. See [FW9.05.md](FW9.05.md) for verification and setup. Hermes retains its complete payload digest. RAM requires its exact startup, validated live table and per-edit source guards described in [BUILDING.md](BUILDING.md). Failed guards leave the entire buffer unchanged. New Media-shortcut registration on firmware 12+ is not implemented.
 
-On 13.60, configure the payload using FTP before launch; see [FW13.60.md](FW13.60.md). Adding the display profile does not add Media registration on firmware 12+.
+On 13.00/13.60, configure the payload using FTP before launch; see [FW13.60.md](FW13.60.md). Adding the display profile does not add Media registration on firmware 12+.
 
 Requires a working jailbreak and a compatible privileged ELF loader. The payload does not provide a jailbreak.
 
 ## Installation
 
-1. Download `App_Title_v0.2.16.elf` from [Releases](https://github.com/porhe911/App-Title/releases/tag/v0.2.16) for supported HomeUI profiles 4.03, 9.05, 11.60 and 13.60, or build from source. Earlier [v0.2.15](https://github.com/porhe911/App-Title/releases/tag/v0.2.15) remains available.
+1. Download `App_Title_v0.2.17.elf` from [Releases](https://github.com/porhe911/App-Title/releases/tag/v0.2.17) for the supported HomeUI profiles on 4.03, 9.05, 11.60, 13.00 and 13.60, or build from source. The previous [v0.2.16](https://github.com/porhe911/App-Title/releases/tag/v0.2.16) remains available.
 2. Remove the previous App Title entry from autoload, or replace its file with the new ELF.
 3. Fully reboot the console to clear any previous resident version.
 4. Run your jailbreak, then load the ELF once or add it to your loader's autoload list.
-5. Wait about 20–30 seconds, then open **Media → App Title** on 4.03/11.60. On 13.60 use the configuration file described above.
+5. Wait about 20–30 seconds, then open **Media → App Title** on 4.03/9.05/11.60. On 13.00/13.60 use the configuration file described above.
 
 Choose the placement, position and colour, then select **Save** or press **OPTIONS**. The home scene refreshes to apply the settings. The settings interface is currently in Russian and supports D-pad / Cross navigation.
 

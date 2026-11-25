@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.17 — 2026-11-25
+
+- Fix outside-icon Title ID placement for the shared 13.00/13.60 HomeUI: anchor the enclosing View instead of its nested Text, retaining text color and font.
+- Owner confirmed the fix on PS5 13.00 on 2026-11-25; revised 13.60 layout has not been separately console-tested.
+- Preserve earlier 4.03, 9.05 and 11.60 profiles, and 13.x inside-mode output.
+- Synchronize release and diagnostic version to 0.2.17. No firmware dumps distributed.
+
 ## 0.2.16 — 2026-11-21
 
 - Normal release ELF: `App_Title_v0.2.16.elf` (SHA-256 `1cce350410947f0901d2b03c11712fc577522f574454cc3d8aea2666ef1f7b0d`; verified through PS5 Payload SDK build and host tests).

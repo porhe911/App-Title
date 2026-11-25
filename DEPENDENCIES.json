@@ -140,8 +140,14 @@
       6484,
       1079
     ],
-    "validation": "Console success reported by estate737 for PR #3. The combined 0.2.15 ELF is owner-confirmed on 4.03; its separate 13.60 console verification and a complete 13.60 fixture remain pending. Both generators are exercised without firmware files.",
-    "media": "No new Media registration on firmware 12+; configure over FTP before launch."
+    "validation": "Original 13.60 contribution reported working by estate737. Shared 13.00/13.60 payload verified on private 13.00 fixture; corrected outside layout confirmed by owner on 2026-11-25. Revised 13.60 layout not separately console-tested.",
+    "media": "No new Media registration on firmware 12+; configure over FTP before launch.",
+    "observed_firmwares": [
+      "13.00",
+      "13.60"
+    ],
+    "input_sha256_private_fixture_1300": "6f9ee7f274d286a6d2edf38e9379c149c9a8938ca0036fbb2e268cbb80698284",
+    "console_tested_wrapper_candidate_sha256": "f3bd640ba0e1c08f56421d928a33594134ef1b37b95830d5edc9db8be97850c1"
   },
   "release_v0_2_16": {
     "version": "0.2.16",
