@@ -156,5 +156,13 @@
     "size_bytes": 299400,
     "build_validation": "GitHub Actions 44901259226 SDK v0.41 / clang 18 / native host tests / package CRC PASS",
     "console_validation": "R3 firmware 9.05 confirmed by owner 2026-11-21; 0.2.16 version-bump rebuild not separately console-tested"
+  },
+  "release_v0_2_17": {
+    "version": "0.2.17",
+    "filename": "App_Title_v0.2.17.elf",
+    "size_bytes": 299400,
+    "sha256": "b16392c6f53398f053bddf01026bde723aff46fe285e7ca616a819de4dc2f7cf",
+    "build_validation": "GitHub Actions 45682848389: SDK v0.41, ELF verification, native host tests, source ZIP integrity PASS",
+    "console_validation": "13.00 wrapper candidate confirmed on console; version-bumped release not separately console-tested"
   }
 }
