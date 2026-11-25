@@ -1,0 +1,36 @@
+name: App Title FW13.00 one-shot diagnostic ELF
+on:
+  push:
+    branches:
+      - test/fw1300-readonly-diagnostic
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: SDK v0.41 and Clang 18
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y clang-18 lld-18 unzip gcc binutils
+          curl -fLsS --retry 3 https://github.com/ps5-payload-dev/sdk/releases/download/v0.41/ps5-payload-sdk.zip -o /tmp/ps5-payload-sdk.zip
+          sudo unzip -q /tmp/ps5-payload-sdk.zip -d /opt
+      - name: Build and validate diagnostic only
+        run: |
+          set -euo pipefail
+          export PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk
+          export PATH=/usr/lib/llvm-18/bin:$PATH
+          make style-test
+          mkdir -p dist
+          "$PS5_PAYLOAD_SDK/bin/prospero-clang" -O2 -Wall -Wextra -Isrc src/fw1300_diagnostic.c src/style_probe.c -lkernel_sys -lSceLibcInternal -o dist/App_Title_FW1300_Diagnostic.elf
+          file dist/App_Title_FW1300_Diagnostic.elf
+          readelf -h -d dist/App_Title_FW1300_Diagnostic.elf
+          sha256sum dist/App_Title_FW1300_Diagnostic.elf
+      - uses: actions/upload-artifact@v4
+        with:
+          name: App_Title_FW1300_Diagnostic
+          path: dist/App_Title_FW1300_Diagnostic.elf
+          if-no-files-found: error
+          retention-days: 7
