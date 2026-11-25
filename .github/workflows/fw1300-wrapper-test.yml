@@ -1,0 +1,53 @@
+name: App Title 13.x wrapper layout test
+on:
+  push:
+    branches:
+      - test/fw1300-titleid-wrapper
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install SDK and Clang
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y clang-18 lld-18 unzip g++ gcc binutils
+          curl -fLsS --retry 3 https://github.com/ps5-payload-dev/sdk/releases/download/v0.41/ps5-payload-sdk.zip -o /tmp/ps5-payload-sdk.zip
+          sudo unzip -q /tmp/ps5-payload-sdk.zip -d /opt
+      - name: Compile baseline and candidate host tests
+        run: |
+          set -euo pipefail
+          git worktree add --detach /tmp/apptitle_baseline 0b3927ee108500c4abe2c55c14e18ba8826e18bf
+          make -C /tmp/apptitle_baseline home-style-test
+          make home-style-test
+          mkdir -p dist
+          cp /tmp/apptitle_baseline/build-host/test_home_style dist/test_home_style_baseline
+          cp build-host/test_home_style dist/test_home_style_candidate
+          # Verify all non-target generator outputs unchanged.
+          for f in /tmp/apptitle_baseline/build-host/generated_style_*.bin; do
+            n="$(basename "$f")"
+            case "$n" in generated_style_1360_1_*) ;; *) cmp "$f" "build-host/$n";; esac
+          done
+      - name: Build PS5 ELF and existing tests
+        run: |
+          set -euo pipefail
+          export PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk
+          export PATH=/usr/lib/llvm-18/bin:$PATH
+          make -j4
+          make host-test media-test hooks-test shellui-test runtime-test style-test export-test ram-style-test
+          cp dist/App_Title_v0.2.16.elf dist/App_Title_FW1300_WRAPPER_TEST.elf
+          sha256sum dist/App_Title_FW1300_WRAPPER_TEST.elf
+      - uses: actions/upload-artifact@v4
+        with:
+          name: App_Title_FW1300_WRAPPER_TEST
+          path: |
+            dist/App_Title_FW1300_WRAPPER_TEST.elf
+            dist/test_home_style_baseline
+            dist/test_home_style_candidate
+          if-no-files-found: error
+          retention-days: 7

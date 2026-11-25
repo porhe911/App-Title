@@ -213,15 +213,20 @@ static std::size_t build_title_style_profile(std::uint8_t* output,std::size_t ca
     w.op3(108,6,16);w.put(7,6,9034);
     w.get(1,3,3,27);w.get(1,1,4,4494);
     w.u8(1);w.u8(6);w.u16(3);w.u16(3);w.u16(modern?897:895);w.u16(modern?1488:1486);w.cached_put(6,1,3,59);
-    w.string(1,3067);w.put(6,1,197);w.op2(120,1);
-    // Auto-height text uses the exact working 0.2.3 anchoring, now inside the
-    // reserved band rather than at a negative coordinate or outside a mask.
-    w.put(6,1,config.top?240:4859);w.put(6,1,158);w.put(6,1,8486);
+    // 13.00/13.60 TitleId renders Text inside a separate background View.
+    // Absolutely positioning the Text makes that View zero-height; its bottom
+    // edge can then be the bottom of the image, not the reserved outer card.
+    // Anchor the parent View instead; leave the Text in normal flow.
+    // Older Hermes profile has no such View and retains its original layout.
+    if(modern)w.op2(3,9);
+    const unsigned anchor=modern?9:6;
+    w.string(1,3067);w.put(anchor,1,197);w.op2(120,1);
+    w.put(anchor,1,config.top?240:4859);w.put(anchor,1,158);w.put(anchor,1,8486);
     w.number(1,static_cast<double>((config.color<<8)|0xffu));w.put(6,1,4583);
     w.op2(3,5);w.string(1,4220);w.put(5,1,197);
     w.get(4,3,5,47);w.get(3,4,6,107);w.op2(3,1);
     w.put(1,8,10650);w.put(1,7,5015);w.put(1,6,237);w.put(1,5,6883);
-    if(modern){w.op2(3,9);w.put(1,9,6376);}
+    if(modern)w.put(1,9,6376);
     w.call(1,3,4,1);w.cached_put(2,1,2,110);w.op2(90,0);
     }
     if(!w.ok||w.used>capacity)return 0;
