@@ -95,6 +95,7 @@ int ioctl_get(int fd,unsigned long command,void* argument,Ioctl original) {
                 style_state.store(app_title::StyleState::applied,std::memory_order_release);
             } else if(patched==app_title::HomeStyleResult::unsupported)style_state.store(app_title::StyleState::unsupported,std::memory_order_release);
             else if(patched==app_title::HomeStyleResult::invalid)style_state.store(app_title::StyleState::invalid,std::memory_order_release);
+            else (void)app_title::patch_library_style(args->buffer,static_cast<std::size_t>(args->size));
         }
     }
     errno=original_errno;

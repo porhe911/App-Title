@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Show the Title ID before each game name in the **Game Library** (`NPXS40071`) on PS5 11.40, e.g. `PPSA01416 Game name`. Fixed format, no settings; follows the existing enabled/disabled switch.
+- Exact-match profile only: the Library's Hermes v89 source hash, bytecode digest and both edited functions must match. Other firmware Library bundles are left untouched.
+- To free the 7 bytes the label needs, the adjacent image-error report omits `imageSourceType`. No other Library function changes.
+- Add `make library-style-test` with an optional user-supplied `LIBRARY_UI` fixture (not redistributed).
+
 ## 0.2.17 — 2026-11-25
 
 - Fix outside-icon Title ID placement for the shared 13.00/13.60 HomeUI: anchor the enclosing View instead of its nested Text, retaining text color and font.

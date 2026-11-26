@@ -63,6 +63,7 @@ Optional fixture and real Hermes VM checks (Sony input and Hermes tools are exte
 
 ```bash
 make home-style-test shellui-test HOME_UI=/absolute/path/HomeUI_decrypted.bin
+make library-style-test LIBRARY_UI=/absolute/path/NPXS40071_decrypted.bin
 python3 tools/verify_style_vm.py --hermes /absolute/path/hermes-v0.12.0/hermes
 python3 tools/verify_tile_vm.py --hermes /absolute/path/hermes-v0.12.0/hermes
 python3 tools/verify_geometry_vm.py --hermes /absolute/path/hermes-v0.12.0/hermes

@@ -89,6 +89,7 @@ constexpr ProfileFunction functions1160[]={
 };
 #include "home_style_1360.inc"
 #include "home_style_fw905.inc"
+#include "library_style_1140.inc"
 constexpr std::size_t tile_size=622;
 std::size_t build_outer_tile(const std::uint8_t* original,std::uint8_t output[tile_size],bool modern=false) {
     std::size_t used=0;
@@ -294,6 +295,70 @@ HomeStyleResult patch_home_style(void* value,std::size_t size,const Config& conf
         hbc[functions[5].offset+0x54e]=1;hbc[functions[5].offset+0x55c]=0;
         replace(6,game_title,game_title_count);
     }
+    sha1_digest(hbc,hbc_size-20,hbc+hbc_size-20);
+    return HomeStyleResult::applied;
+}
+HomeStyleResult patch_library_style(void* value,std::size_t size) {
+    if(!value||size<64||size>32*1024*1024)return HomeStyleResult::ignored;
+    auto* bundle=static_cast<std::uint8_t*>(value);
+    if(std::memcmp(bundle,"RNPSHEDR",8)||read32(bundle+8)!=2)return HomeStyleResult::ignored;
+    const auto offset=read32(bundle+0x1c),region=read32(bundle+0x20),plain=read32(bundle+0x24),end=read32(bundle+0x28);
+    if(offset<64||region<128||plain<128||plain>region||offset>size||region>size-offset||end!=offset+region)return HomeStyleResult::ignored;
+    auto* hbc=bundle+offset;
+    constexpr std::uint8_t magic[]={0xc6,0x1f,0xbc,0x03,0xc1,0x03,0x19,0x1f};
+    if(std::memcmp(hbc,magic,8)||std::memcmp(hbc+12,library_source_hash1140,20))return HomeStyleResult::ignored;
+    const auto hbc_size=library_hbc_size1140;
+    if(read32(hbc+8)!=89||plain!=hbc_size||read32(hbc+32)!=hbc_size||read32(hbc+40)!=library_function_count1140||
+       std::memcmp(hbc+hbc_size-20,library_bytecode_hash1140,20))return HomeStyleResult::invalid;
+    std::uint8_t digest[20];sha1_digest(hbc,hbc_size-20,digest);
+    if(std::memcmp(digest,library_bytecode_hash1140,20))return HomeStyleResult::invalid;
+    for(const auto& f:library_functions1140) {
+        if(std::memcmp(hbc+128+16*f.number,f.header,16))return HomeStyleResult::invalid;
+        sha1_digest(hbc+f.offset,f.size,digest);if(std::memcmp(digest,f.hash,20))return HomeStyleResult::invalid;
+    }
+    const auto& report=library_functions1140[0];const auto& label=library_functions1140[1];
+    if(report.offset+report.size!=label.offset)return HomeStyleResult::invalid;
+    // #6694 drops imageSourceType from its image error report: the load
+    // from closure slot 1 and the property store. Nothing else uses R3.
+    std::uint8_t code[94+67]{};std::size_t used=0;
+    const auto* source=hbc+report.offset;
+    const auto copy=[&](std::size_t first,std::size_t last){std::memcpy(code+used,source+first,last-first);used+=last-first;};
+    copy(0,0x27);copy(0x2b,0x4b);copy(0x50,report.size);
+    const auto report_size=used;
+    // #6695: label text becomes "<titleId> <name>" when the tile has a
+    // title ID; otherwise the original name. Early exits still return
+    // undefined, and hideOnGlance is computed exactly as before.
+    constexpr std::uint8_t label_code[]={
+        41,0,0,              // GetEnvironment r0
+        46,1,0,2,            // r1 = metadata visible
+        144,0x3f,1,          // JmpFalse undefined
+        46,1,0,0,            // r1 = tile info
+        144,0x38,1,          // JmpFalse undefined
+        52,2,1,0,94,         // r2 = info.titleId (uncached)
+        52,1,1,1,109,        // r1 = info.name
+        144,0x2b,1,          // JmpFalse undefined
+        144,0x0f,2,          // JmpFalse name only
+        113,3,0xb4,0x02,     // r3 = " "
+        22,2,2,3,            // r2 = titleId + " "
+        22,1,2,1,            // r1 = r2 + name
+        46,2,0,18,           // r2 = metadataOnGlance
+        3,0,                 // NewObject r0
+        61,0,1,51,           // .text = r1
+        113,1,82,0,          // r1 = "all"
+        17,1,1,2,            // r1 = "all" !== metadataOnGlance
+        62,0,1,0x44,0x49,    // .hideOnGlance = r1
+        90,0,                // Ret r0
+        116,1,               // undefined:
+        90,1};
+    static_assert(85+sizeof(label_code)<=sizeof(code),"Library label bytecode size");
+    std::memcpy(code+report_size,label_code,sizeof(label_code));
+    std::memcpy(hbc+report.offset,code,sizeof(code));
+    auto* report_header=hbc+128+16*report.number;
+    write32(report_header+4,(read32(report_header+4)&~0x7fffu)|static_cast<std::uint32_t>(report_size));
+    auto* label_header=hbc+128+16*label.number;
+    write32(label_header,(read32(label_header)&~0x1ffffffu)|static_cast<std::uint32_t>(report.offset+report_size));
+    write32(label_header+4,(read32(label_header+4)&~0x7fffu)|static_cast<std::uint32_t>(sizeof(label_code)));
+    write32(label_header+8,(read32(label_header+8)&0x1ffffffu)|(4u<<25)); // R3 holds the separator
     sha1_digest(hbc,hbc_size-20,hbc+hbc_size-20);
     return HomeStyleResult::applied;
 }
