@@ -8,6 +8,8 @@ enum class HomeStyleResult : unsigned { ignored=0, applied=1, unsupported=2, inv
 // Hermes digest, or RAM startup, table and per-edit source guards, must agree. Supports
 // the guarded 4.03 JavaScript RAM profile and exact 9.05/11.60/13.60 Hermes profiles.
 HomeStyleResult patch_home_style(void* bundle,std::size_t size,const Config& config,StyleInput* observed=nullptr);
+// Exact 11.40 Game Library (NPXS40071) only: Title ID before each tile name.
+HomeStyleResult patch_library_style(void* bundle,std::size_t size);
 using RamSourceObserver=void(*)(const void*,std::size_t);
 void set_ram_source_observer(RamSourceObserver observer);
 // Exposed for bytecode/VM verification; generated independently of Sony code.

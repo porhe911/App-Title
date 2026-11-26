@@ -11,9 +11,9 @@ CSRC := vendor/shsrv/pt.c vendor/loader/stable_elfldr_bridge.c src/style_probe.c
 CPPSRC := src/main.cpp src/core.cpp src/paths.cpp src/hooks.cpp src/relocate.cpp src/settings.cpp src/style_export.cpp src/media_launcher.cpp vendor/hde/hde64.cpp vendor/loader/stable_shellui_injector.cpp vendor/loader/remote_call.cpp build/shellui_blob.cpp build/html.cpp build/param.cpp build/icon.cpp
 OBJ := $(addprefix build/obj/,$(CSRC:.c=.o) $(CPPSRC:.cpp=.o))
 
-.PHONY: all clean verify-elf host-test media-test hooks-test shellui-test runtime-test style-test export-test home-style-test ram-style-test
+.PHONY: all clean verify-elf host-test media-test hooks-test shellui-test runtime-test style-test export-test home-style-test library-style-test ram-style-test
 all: dist/App_Title_v0.2.17.elf verify-elf
-build/App_Title_ShellUI.elf: src/shellui.cpp src/paths.cpp src/home_style.cpp src/home_style_1360.inc src/home_style_fw905.inc src/home_ram.cpp src/home_style.hpp src/ram_js.hpp src/live_ram_export.hpp include/app_title.hpp Makefile
+build/App_Title_ShellUI.elf: src/shellui.cpp src/paths.cpp src/home_style.cpp src/home_style_1360.inc src/home_style_fw905.inc src/library_style_1140.inc src/home_ram.cpp src/home_style.hpp src/ram_js.hpp src/live_ram_export.hpp include/app_title.hpp Makefile
 	@mkdir -p build
 	$(CXX) $(CXXFLAGS) -fvisibility=hidden -shared -Wl,-Bsymbolic -Wl,-e,elf_main -Wl,-z,now -Wl,--hash-style=sysv -Wl,--gc-sections -Wl,-soname,libAppTitle.so src/shellui.cpp src/paths.cpp src/home_style.cpp src/home_ram.cpp $(SHELLUI_LDLIBS) -o $@
 build/shellui_blob.cpp: build/App_Title_ShellUI.elf tools/embed.py
@@ -67,6 +67,10 @@ home-style-test:
 	@mkdir -p build-host
 	g++ -O2 -Wall -Wextra -Werror -std=c++17 -Iinclude -Isrc tests/test_home_style.cpp src/home_style.cpp src/home_ram.cpp -o build-host/test_home_style
 	./build-host/test_home_style $(if $(HOME_UI),"$(HOME_UI)")
+library-style-test:
+	@mkdir -p build-host
+	g++ -O2 -Wall -Wextra -Werror -std=c++17 -Iinclude -Isrc tests/test_library_style.cpp src/home_style.cpp src/home_ram.cpp -o build-host/test_library_style
+	./build-host/test_library_style $(if $(LIBRARY_UI),"$(LIBRARY_UI)")
 ram-style-test:
 	@mkdir -p build-host
 	g++ -O2 -Wall -Wextra -Werror -std=c++17 -Iinclude -Isrc tests/test_home_ram.cpp src/home_style.cpp src/home_ram.cpp -o build-host/test_home_ram

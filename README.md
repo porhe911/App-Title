@@ -17,6 +17,7 @@ Title IDs appear below the icons, outside the artwork, with white text by defaul
 - Title IDs such as `CUSA00001` and `PPSA03846`.
 - Labels above or below the application image, with space reserved outside the artwork.
 - Optional inside-image placement.
+- Title IDs before game names in the Game Library on 11.40 (fixed format, no settings).
 - Eight preset colours and custom six-digit HEX colours.
 - White labels below the image by default.
 - Settings saved under `/data/AppTitle/`.
